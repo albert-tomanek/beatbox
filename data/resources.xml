@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/albert-tomanek/beatbox">
+	<file alias="main.ui" compressed="true" preprocess="xml-stripblanks">layout/main.ui</file>
+	<file alias="style.css" compressed="true">style/style.css</file>
+	<file alias="metronome.svg" compressed="true">images/metronome.svg</file>
+  </gresource>
+</gresources>
