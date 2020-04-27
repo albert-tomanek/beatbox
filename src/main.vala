@@ -46,20 +46,29 @@ namespace Beatbox {
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/main.ui")]
 	class MainWindow : Gtk.ApplicationWindow
 	{
-		[GtkChild] Gtk.HeaderBar hbar;
+		[GtkChild] Gtk.Grid tile_grid;
 
 		public MainWindow(Gtk.Application app)
 		{
-			this.application = app;
+			Object(application: app);
 			this.load_style();
 
-			this.set_titlebar(hbar);
+			for (var col = 0; col < 3; col++) {
+				for (var row = 0; row < 3; row++) {
+					var host = new TileHost();
+					this.tile_grid.attach(host, row, col);
+					host.show();
+				}
+			}
+
+			(this.tile_grid.get_child_at(0, 1) as TileHost).tile = new DummyTile();
+			(this.tile_grid.get_child_at(2, 0) as TileHost).tile = new DummyTile();
 		}
 
 		private void load_style()
 		{
 			var css_provider = new Gtk.CssProvider();
-			css_provider.load_from_resource("/com/github/albert-tomanek/gkeep/style.css");
+			css_provider.load_from_resource("/com/github/albert-tomanek/beatbox/style.css");
 			Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 		}
 	}

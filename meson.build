@@ -96,7 +96,10 @@ resources = gnome.compile_resources(
 message ('Adds files to build')
 
 code_files = files(
-    'src/main.vala'
+    'src/main.vala',
+	'src/tile.vala',
+	'src/tilehost.vala',
+	'src/tiles/dummytile.vala',
 )
 
 message ('Defines executable')
