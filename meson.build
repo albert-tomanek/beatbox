@@ -28,6 +28,10 @@ message ('Listing dependencies')
 dependencies = [
     dependency('gio-unix-2.0', version: '>=2.20'),
     dependency('granite'),
+	dependency('gstreamer-1.0'),
+	dependency('gstreamer-audio-1.0'),
+	dependency('gstreamer-app-1.0'),
+	dependency('gst-editing-services-1.0'),
 ]
 
 # Adds subfolders specific build system
@@ -100,6 +104,7 @@ code_files = files(
 	'src/tile.vala',
 	'src/tilehost.vala',
 	'src/tiles/dummytile.vala',
+	'src/tiles/looptile.vala',
 )
 
 message ('Defines executable')

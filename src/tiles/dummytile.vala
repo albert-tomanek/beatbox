@@ -4,6 +4,11 @@ class Beatbox.DummyTile : Beatbox.Tile
 		get { return false; }
 	}
 
+	public DummyTile(MainWindow app)
+	{
+		base(app);
+	}
+
 	public override void draw (Cairo.Context context, uint16 x, uint16 y)
 	{
 		set_context_rgb(context, Palette.RED);
@@ -24,6 +29,6 @@ class Beatbox.DummyTile : Beatbox.Tile
 	{
 		set_context_rgb(context, (uint32) 0xffffffc0);
 		this.plot_border(context, x, y);
-		context.fill();
+		context.stroke();
 	}
 }

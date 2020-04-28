@@ -16,13 +16,17 @@ class Beatbox.TileHost : Gtk.DrawingArea
 		}
 	}
 
+	public signal void uri_dropped(TileHost host, string uri);
+
 	/* Gtk stuff */
 	public enum DndTargetType {
-		TILE_PTR
+		TILE_PTR,
+		URI,
 	}
 
 	public const Gtk.TargetEntry[] gtk_targetentries = {
-		{"com.github.albert-tomanek.beatbox.tile_instance_ptr", Gtk.TargetFlags.SAME_APP, TileHost.DndTargetType.TILE_PTR}
+		{"com.github.albert-tomanek.beatbox.tile_instance_ptr", Gtk.TargetFlags.SAME_APP, DndTargetType.TILE_PTR},
+		{"text/uri-list", 0, DndTargetType.URI},
 	};
 
 	private bool tile_being_dragged = false;
@@ -126,6 +130,11 @@ class Beatbox.TileHost : Gtk.DrawingArea
 	internal override override void drag_begin (Gdk.DragContext context)
 	{
 		this.tile_being_dragged = true;
+
+		var sfc = new Cairo.ImageSurface(Cairo.Format.ARGB32, TILE_WIDTH, TILE_HEIGHT);
+        this.tile.draw(new Cairo.Context(sfc), 0, 0);
+
+		Gtk.drag_set_icon_pixbuf(context, Gdk.pixbuf_get_from_surface(sfc, 0, 0, TILE_WIDTH, TILE_HEIGHT), TILE_WIDTH/2, TILE_HEIGHT/2);
 	}
 
 	internal override void drag_end (Gdk.DragContext context)
@@ -165,9 +174,13 @@ class Beatbox.TileHost : Gtk.DrawingArea
 
 		if (context.list_targets() == null) return false;
 
-		Gdk.Atom? target_type = find_atom_with_name("com.github.albert-tomanek.beatbox.tile_instance_ptr", context.list_targets());	//.nth_data(TileHost.DndTargetType.TILE_PTR);
-
-		if (target_type == null) return false;	// No compatable target type
+		Gdk.Atom? target_type = null;
+		if (target_type == null)
+			target_type = find_atom_with_name("com.github.albert-tomanek.beatbox.tile_instance_ptr", context.list_targets());	//.nth_data(TileHost.DndTargetType.TILE_PTR);
+		if (target_type == null)
+			target_type = find_atom_with_name("text/uri-list", context.list_targets());
+		if (target_type == null)
+			return false;	// No compatable target type
 
 		/* Request the data from the source. */
 		Gtk.drag_get_data (
@@ -188,7 +201,7 @@ class Beatbox.TileHost : Gtk.DrawingArea
 		if (selection_data.get_length() >= 0)
 		{
 			switch (target_type) {
-				case TileHost.DndTargetType.TILE_PTR:
+				case DndTargetType.TILE_PTR:
 				{
 					Tile tile = ((Tile[]) selection_data.get_data())[0];
 					tile.unref();
@@ -197,6 +210,12 @@ class Beatbox.TileHost : Gtk.DrawingArea
 						tile.host.tile = null;
 
 					this.tile = tile;
+					break;
+				}
+				case DndTargetType.URI:
+				{
+					var uri = selection_data.get_uris()[0];
+					this.uri_dropped(this, uri);
 					break;
 				}
 				default:

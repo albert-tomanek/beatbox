@@ -38,6 +38,9 @@ namespace Beatbox {
         }
 
         public static int main (string[] args) {
+            Gst.init(ref args);
+            GES.init();
+
             var app = new Beatbox.Application ();
             return app.run (args);
         }
@@ -53,16 +56,24 @@ namespace Beatbox {
 			Object(application: app);
 			this.load_style();
 
+			this.get_settings().get_default().gtk_application_prefer_dark_theme = true;
+
+			this.init_audio();
+
+			/* Fill grid of tile spaces */
 			for (var col = 0; col < 3; col++) {
 				for (var row = 0; row < 3; row++) {
 					var host = new TileHost();
 					this.tile_grid.attach(host, row, col);
+					host.uri_dropped.connect((host, uri) => {
+						host.tile = new LoopTile(this, uri);
+					});
 					host.show();
 				}
 			}
 
-			(this.tile_grid.get_child_at(0, 1) as TileHost).tile = new DummyTile();
-			(this.tile_grid.get_child_at(2, 0) as TileHost).tile = new DummyTile();
+			(this.tile_grid.get_child_at(0, 1) as TileHost).tile = new DummyTile(this);
+			(this.tile_grid.get_child_at(2, 0) as TileHost).tile = new DummyTile(this);
 		}
 
 		private void load_style()
@@ -71,5 +82,16 @@ namespace Beatbox {
 			css_provider.load_from_resource("/com/github/albert-tomanek/beatbox/style.css");
 			Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 		}
+
+		/* Audio playback */
+        internal GES.Timeline timeline;  // Every time the user schedules a tile to start playing, it's added as a clip to the timeline.
+        internal GES.Pipeline pipeline;  // Gstreamer pipeline
+
+        private void init_audio()
+        {
+            this.timeline = new GES.Timeline.audio_video();
+            this.pipeline = new GES.Pipeline();
+            this.pipeline.set_timeline(this.timeline);
+        }
 	}
 }

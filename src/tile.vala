@@ -9,7 +9,7 @@ namespace Beatbox
 
 	namespace Palette
 	{
-		const uint32 LIGHT_BLUE = 0x38acffff;
+		const uint32 LIGHT_BLUE = 0x38acffc0;
 		const uint32 DARK_BLUE  = 0x124780ff;
 		const uint32 BLACK      = 0x101010ff;
 		const uint32 WHITE      = (uint32) 0xffffffff;
@@ -33,8 +33,12 @@ namespace Beatbox
 		public virtual void stop()  { }
 		public abstract bool playing { get; }
 
-		public Tile()
+		private weak MainWindow app;
+
+		public Tile(MainWindow app)
 		{
+			this.app = app;
+
 			this.attached.connect((host) => {this.host = host;});
 			this.detached.connect(()     => {this.host = null;});
 		}
