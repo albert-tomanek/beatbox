@@ -1,0 +1,61 @@
+I'm writing a GStreamer element that does some statistics on a raw audio stream. Since it's a simple element that does not modify the data, I'm subclassing [`GstAudioFilter`](https://gstreamer.freedesktop.org/documentation/audio/gstaudiofilter.html?gi-language=c#GstAudioFilter).
+
+```
+class MeanAmplitude : Gst.Audio.Filter
+{
+	public MeanAmplitude()
+	{
+		this.set_in_place(true);
+	}
+
+	static construct {
+		Gst.Caps caps = Gst.Caps.from_string("audio/x-raw,format=F32,channels=[1,2],layout=interleaved");
+        add_pad_templates (caps);
+	}
+
+	public override bool setup (Gst.Audio.Info info)
+	{
+		this._info = info.copy();
+		return true;
+	}
+
+	public override Gst.FlowReturn transform_ip(Gst.Buffer buf)
+	{
+		unowned uint8[] sample_data;
+		size_t data_sz = buf.extract(0, out sample_data);
+
+        ...
+
+		return Gst.FlowReturn.OK;
+	}
+
+    ...
+}
+```
+
+I use it in a pipeline like this:
+```
+			Gst.Pipeline pipeline = new Gst.Pipeline(null);
+			Gst.Element uridecodebin  = Gst.ElementFactory.make ("uridecodebin", null);
+			Gst.Element audioconvert  = Gst.ElementFactory.make ("audioconvert", null);
+			Gst.Element meanamp       = new MeanAmplitude(44100);
+			Gst.Element fakesink      = Gst.ElementFactory.make ("fakesink", null);
+
+			/* Link elements */
+			pipeline.add_many(uridecodebin, audioconvert, meanamp, fakesink);
+			var rc=audioconvert.link_many(meanamp, fakesink);	// ?
+
+			uridecodebin.pad_added.connect((pad) => { pad.link(audioconvert.get_static_pad("sink")); });
+```
+However, when I play the pipeline, the `audioconvert` element complains that its pad does not have a peer -- even though I've linked it, and the `gstAudioFilter` base class should (probably?) be creating it for me.
+```
+...
+0:00:06.962332137 25154 0x7f665405cf20 INFO         audio-converter audio-converter.c:1240:gst_audio_converter_new: same formats, no resampler and passthrough mixing -> passthrough
+0:00:06.962344463 25154 0x7f665405cf20 INFO               GST_EVENT gstevent.c:814:gst_event_new_caps: creating caps event audio/x-raw, format=(string)F32LE, layout=(string)interleaved, rate=(int)44100, channels=(int)2, channel-mask=(bitmask)0x0000000000000003
+0:00:06.962364820 25154 0x7f665405cf20 INFO                GST_PADS gstpad.c:4232:gst_pad_peer_query:<audioconvert0:src> pad has no peer
+0:00:06.962399766 25154 0x7f665405cf20 INFO                GST_PADS gstpad.c:4232:gst_pad_peer_query:<audioconvert0:src> pad has no peer
+0:00:06.962446434 25154 0x7f665405cf20 WARN               baseparse gstbaseparse.c:3611:gst_base_parse_loop:<aacparse0> error: Internal data stream error.
+0:00:06.962454608 25154 0x7f665405cf20 WARN               baseparse gstbaseparse.c:3611:gst_base_parse_loop:<aacparse0> error: streaming stopped, reason not-linked (-1)
+```
+
+What am I missing?

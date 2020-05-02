@@ -25,6 +25,9 @@ add_global_arguments('-DGETTEXT_PACKAGE=\"@0@\"'.format (meson.project_name()), 
 # Adding deps
 message ('Listing dependencies')
 
+add_project_arguments(['-I ', meson.current_source_dir() / 'src/gst/'], language: 'c')
+add_project_arguments(['--vapidir', meson.current_source_dir() / 'src/gst/', '--pkg', 'mygstaudiofilter'], language: 'vala')
+
 dependencies = [
     dependency('gio-unix-2.0', version: '>=2.20'),
     dependency('granite'),
@@ -32,6 +35,8 @@ dependencies = [
 	dependency('gstreamer-audio-1.0'),
 	dependency('gstreamer-app-1.0'),
 	dependency('gst-editing-services-1.0'),
+
+#	dependency('mygstaudiofilter'),	# This is our custom vapi in src/gst/
 ]
 
 # Adds subfolders specific build system
@@ -105,6 +110,7 @@ code_files = files(
 	'src/tilehost.vala',
 	'src/tiles/dummytile.vala',
 	'src/tiles/looptile.vala',
+	'src/gst/meanamplitude.vala',
 )
 
 message ('Defines executable')
@@ -114,5 +120,6 @@ executable(
 	resources,
     sources: code_files,
     dependencies: dependencies,
-    install: true
+    install: true,
+	include_directories: include_directories('src/gst/'),
 )

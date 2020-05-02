@@ -87,7 +87,7 @@ namespace Beatbox {
         internal GES.Timeline timeline;  // Every time the user schedules a tile to start playing, it's added as a clip to the timeline.
         internal GES.Pipeline pipeline;  // Gstreamer pipeline
 
-        private void init_audio()
+        private void init_audio()	// https://github.com/GStreamer/gst-editing-services/blob/master/examples/python/simple.py
         {
             this.timeline = new GES.Timeline.audio_video();
             this.pipeline = new GES.Pipeline();

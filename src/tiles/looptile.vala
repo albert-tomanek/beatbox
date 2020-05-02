@@ -5,11 +5,14 @@ namespace Beatbox
 	class LoopTile : Tile
 	{
 		string uri;
+		float[] repr_l = new float[512];
+		float[] repr_r = new float[512];
 
 		public LoopTile(MainWindow app, string uri)
 		{
 			base(app);
 			this.uri = uri;
+			this.load_repr();
 		}
 
 		public override void start()
@@ -38,6 +41,47 @@ namespace Beatbox
 			set_context_rgb(context, Palette.LIGHT_BLUE);
 			this.plot_border(context, x, y);
 			context.stroke();
+		}
+
+		private void load_repr()
+		{
+			uint repr_idx = 0;
+
+			/* Create elements */
+			Gst.Pipeline pipeline = new Gst.Pipeline(null);
+			Gst.Element uridecodebin  = Gst.ElementFactory.make ("uridecodebin", null);
+			Gst.Element audioconvert  = Gst.ElementFactory.make ("audioconvert", null);
+			Gst.Element level         = Gst.ElementFactory.make ("level", null);
+			Gst.Element fakesink      = Gst.ElementFactory.make ("fakesink", null);
+
+			/* Link elements */
+			pipeline.add_many(uridecodebin, audioconvert, level, fakesink);
+			audioconvert.link_many(level, fakesink);	// ?
+
+			uridecodebin.pad_added.connect((pad) => { pad.link(audioconvert.get_static_pad("sink")); });
+			uridecodebin.set("uri", this.uri);
+
+			pipeline.set_state(Gst.State.PLAYING);
+			pipeline.get_bus().message.connect((msg) => {
+				print(msg.type.get_name()+"\n");
+				if (msg.type == Gst.MessageType.ERROR)
+				{Error error;string dbg; msg.parse_error(out  error, out dbg); print(error.message+"\n"+dbg+"\n");}
+				if (msg.type == Gst.MessageType.ELEMENT && msg.get_structure() != null)
+				{
+					if (msg.get_structure().get_name() == "mean-amplitude" && repr_idx < 512)
+					{
+						msg.get_structure().get_uint("l_avg", out this.repr_l[repr_idx]);	// there's no `get_float` so we use `get_uint` which should be of the same size.
+						msg.get_structure().get_uint("r_avg", out this.repr_r[repr_idx]);
+
+						repr_idx++;
+					}
+				}
+			});
+
+			/* Wait for the stream to end */
+			pipeline.get_bus().poll(Gst.MessageType.EOS, Gst.CLOCK_TIME_NONE);
+
+			pipeline.set_state(Gst.State.NULL);
 		}
 
 		// private Loop loop;
