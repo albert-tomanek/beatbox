@@ -34,6 +34,8 @@ namespace Beatbox
 			context.set_line_join(Cairo.LineJoin.ROUND);
 			this.plot_shape(context, x, y);
 			context.fill();
+
+			this.draw_amplitude(context, x, y);
 		}
 
 		public override void draw_border (Cairo.Context context, uint16 x, uint16 y)
@@ -41,6 +43,33 @@ namespace Beatbox
 			set_context_rgb(context, Palette.LIGHT_BLUE);
 			this.plot_border(context, x, y);
 			context.stroke();
+		}
+
+		public void draw_amplitude(Cairo.Context context, uint16 x, uint16 y)
+		{
+			set_context_rgb(context, Palette.WHITE);
+
+			var half_height = (TILE_HEIGHT / 2);
+			var baseline_y  = y + half_height;
+
+			context.move_to(x + 0, baseline_y);
+
+			/* Draw top half, left channel */
+			for (int i = 0; i < TILE_WIDTH; i++)
+			{
+				float amplitude = this.repr_l[i * 512 / TILE_WIDTH];
+				context.line_to(x + i, baseline_y - (amplitude * half_height));
+			}
+
+			/* Draw bottom half, right channel */
+			for (int i = TILE_WIDTH; i > 0; i--)
+			{
+				float amplitude = this.repr_r[i * 512 / TILE_WIDTH];
+				context.line_to(x + i, baseline_y + (amplitude * half_height));
+			}
+
+			context.close_path();
+			context.fill();
 		}
 
 		private void load_repr()
@@ -59,19 +88,31 @@ namespace Beatbox
 			audioconvert.link_many(level, fakesink);	// ?
 
 			uridecodebin.pad_added.connect((pad) => { pad.link(audioconvert.get_static_pad("sink")); });
+
 			uridecodebin.set("uri", this.uri);
+			level.set("interval", this.get_duration() / 512);
 
 			pipeline.set_state(Gst.State.PLAYING);
 			pipeline.get_bus().message.connect((msg) => {
-				print(msg.type.get_name()+"\n");
 				if (msg.type == Gst.MessageType.ERROR)
-				{Error error;string dbg; msg.parse_error(out  error, out dbg); print(error.message+"\n"+dbg+"\n");}
+				{
+					Error error;
+					string dbg;
+					msg.parse_error(out  error, out dbg);
+					printerr(error.message + "\n" + dbg + "\n");
+				}
 				if (msg.type == Gst.MessageType.ELEMENT && msg.get_structure() != null)
 				{
-					if (msg.get_structure().get_name() == "mean-amplitude" && repr_idx < 512)
+					if (msg.get_structure().get_name() == "level" && repr_idx < 512)
 					{
-						msg.get_structure().get_uint("l_avg", out this.repr_l[repr_idx]);	// there's no `get_float` so we use `get_uint` which should be of the same size.
-						msg.get_structure().get_uint("r_avg", out this.repr_r[repr_idx]);
+						GLib.ValueArray channels;
+						msg.get_structure().get("rms", typeof(GLib.ValueArray), out channels);
+
+						float decibels = (float) channels.get_nth(0).get_double();
+						float loudness = Math.exp10f(decibels/20f);	// Reverse the operation [here]. Values should be [0, 1] but tend to be [0, 0.25].  https://github.com/GStreamer/gst-plugins-good/blob/master/gst/level/gstlevel.c#L701
+//						float loudness = (decibels + 60) / 60f;
+
+						this.repr_l[repr_idx] = this.repr_r[repr_idx] = loudness.clamp(0, 1);		// TODO: Make both channels discrete
 
 						repr_idx++;
 					}
@@ -82,6 +123,14 @@ namespace Beatbox
 			pipeline.get_bus().poll(Gst.MessageType.EOS, Gst.CLOCK_TIME_NONE);
 
 			pipeline.set_state(Gst.State.NULL);
+		}
+
+		private Gst.ClockTime get_duration()
+		{
+			var discoverer = new Gst.PbUtils.Discoverer(0);
+			var info = discoverer.discover_uri(this.uri);
+
+			return info.get_duration();
 		}
 
 		// private Loop loop;
