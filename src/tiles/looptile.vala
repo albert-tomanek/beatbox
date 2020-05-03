@@ -8,12 +8,18 @@ namespace Beatbox
 		float[] visu_l = new float[512];
 		float[] visu_r = new float[512];
 
+		GES.UriClip clip;
+		GES.Layer layer;
+
 		public LoopTile(MainWindow app, string uri)
 		{
 			base(app);
 			this.uri = uri;
+			this.clip  = new GES.UriClip(uri);
+			this.layer = new GES.Layer();
+			app.timeline.add_layer(this.layer);
 
-			VisuUpdateCallback update = () => {		// This callbck isn't really needed because the tile host is scheduled to update every 50ms anyway, but it's here in case it isn;t some time in the future.
+			VisuUpdateCallback update = () => {
 				if (this.host != null)
 					this.host.queue_draw();
 			};
@@ -26,10 +32,19 @@ namespace Beatbox
 		public override void start()
 		{
 			print(@"started $(uri)\n");
+
+			this.clip.start = 0;//app.pipeline.get_clock().get_time() + Gst.SECOND;
+			this.clip.duration = 4 * Gst.SECOND;
+			this.clip.mute = false;
+			this.clip.in_point = 0;
+
+			this.layer.add_clip(this.clip);
+			app.pipeline.set_state(Gst.State.PLAYING);
 		}
 
 		public override void stop()
 		{
+			print("stopped\n");
 		}
 
 		public override bool playing {

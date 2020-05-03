@@ -33,7 +33,7 @@ namespace Beatbox
 		public virtual void stop()  { }
 		public abstract bool playing { get; }
 
-		private weak MainWindow app;
+		protected weak MainWindow app;
 
 		public Tile(MainWindow app)
 		{
