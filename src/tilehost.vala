@@ -10,6 +10,8 @@ class Beatbox.TileHost : Gtk.DrawingArea
 
 			if (tile_ != null)
 				tile_.attached(this);
+
+			this.queue_draw();
 		}
 		get {
 			return tile_;
@@ -49,16 +51,24 @@ class Beatbox.TileHost : Gtk.DrawingArea
 		/* Drag and Drop */
 		Gtk.drag_dest_set(this, Gtk.DestDefaults.MOTION, TileHost.gtk_targetentries, Gdk.DragAction.MOVE);
 
-		this.notify["tile"].connect(() => {
-			if (this.tile != null) {
-				Gtk.drag_source_set(this, Gdk.ModifierType.BUTTON1_MASK, TileHost.gtk_targetentries, Gdk.DragAction.MOVE);
-			} else {
-				Gtk.drag_source_unset(this);
-			}
-		});
+		this.notify["tile"].connect(this.on_tile_changed);
 
 		/* Queue a redraw every 50 milliseconds */
-		Timeout.add(50, () => { this.queue_draw(); return true; });
+		// Timeout.add(50, () => { this.queue_draw(); return true; });
+	}
+
+	void on_tile_changed()
+	{
+		if (this.tile != null)
+		{
+			Gtk.drag_source_set(this, Gdk.ModifierType.BUTTON1_MASK, TileHost.gtk_targetentries, Gdk.DragAction.MOVE);
+
+			this.tile.notify["selected"].connect(() => { this.queue_draw(); });
+		}
+		else
+		{
+			Gtk.drag_source_unset(this);
+		}
 	}
 
 	/* User interaction handelers */

@@ -5,14 +5,22 @@ namespace Beatbox
 	class LoopTile : Tile
 	{
 		string uri;
-		float[] repr_l = new float[512];
-		float[] repr_r = new float[512];
+		float[] visu_l = new float[512];
+		float[] visu_r = new float[512];
 
 		public LoopTile(MainWindow app, string uri)
 		{
 			base(app);
 			this.uri = uri;
-			this.load_repr();
+
+			VisuUpdateCallback update = () => {		// This callbck isn't really needed because the tile host is scheduled to update every 50ms anyway, but it's here in case it isn;t some time in the future.
+				if (this.host != null)
+					this.host.queue_draw();
+			};
+
+			this.load_repr.begin(update, 1, () => {
+				update();
+			});
 		}
 
 		public override void start()
@@ -57,14 +65,14 @@ namespace Beatbox
 			/* Draw top half, left channel */
 			for (int i = 0; i < TILE_WIDTH; i++)
 			{
-				float amplitude = this.repr_l[i * 512 / TILE_WIDTH];
+				float amplitude = this.visu_l[i * 512 / TILE_WIDTH];
 				context.line_to(x + i, baseline_y - (amplitude * half_height));
 			}
 
 			/* Draw bottom half, right channel */
 			for (int i = TILE_WIDTH; i > 0; i--)
 			{
-				float amplitude = this.repr_r[i * 512 / TILE_WIDTH];
+				float amplitude = this.visu_r[i * 512 / TILE_WIDTH];
 				context.line_to(x + i, baseline_y + (amplitude * half_height));
 			}
 
@@ -72,9 +80,11 @@ namespace Beatbox
 			context.fill();
 		}
 
-		private void load_repr()
+		private delegate void VisuUpdateCallback();
+
+		private async void load_repr(VisuUpdateCallback? update = null, uint update_interval = 1)	// Cancellable? c
 		{
-			uint repr_idx = 0;
+			uint visu_idx = 0;
 
 			/* Create elements */
 			Gst.Pipeline pipeline = new Gst.Pipeline(null);
@@ -92,6 +102,9 @@ namespace Beatbox
 			uridecodebin.set("uri", this.uri);
 			level.set("interval", this.get_duration() / 512);
 
+			Idle.add(load_repr.callback);
+			yield;
+
 			pipeline.set_state(Gst.State.PLAYING);
 			pipeline.get_bus().message.connect((msg) => {
 				if (msg.type == Gst.MessageType.ERROR)
@@ -103,7 +116,7 @@ namespace Beatbox
 				}
 				if (msg.type == Gst.MessageType.ELEMENT && msg.get_structure() != null)
 				{
-					if (msg.get_structure().get_name() == "level" && repr_idx < 512)
+					if (msg.get_structure().get_name() == "level" && visu_idx < 512)
 					{
 						GLib.ValueArray channels;
 						msg.get_structure().get("rms", typeof(GLib.ValueArray), out channels);
@@ -112,9 +125,15 @@ namespace Beatbox
 						float loudness = Math.exp10f(decibels/20f);	// Reverse the operation [here]. Values should be [0, 1] but tend to be [0, 0.25].  https://github.com/GStreamer/gst-plugins-good/blob/master/gst/level/gstlevel.c#L701
 //						float loudness = (decibels + 60) / 60f;
 
-						this.repr_l[repr_idx] = this.repr_r[repr_idx] = loudness.clamp(0, 1);		// TODO: Make both channels discrete
+						this.visu_l[visu_idx] = this.visu_r[visu_idx] = loudness.clamp(0, 1);		// TODO: Make both channels discrete
 
-						repr_idx++;
+						visu_idx++;
+
+						if (update != null && visu_idx % update_interval == 0)
+						{
+							update();
+							yield;
+						}
 					}
 				}
 			});
