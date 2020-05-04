@@ -101,11 +101,12 @@ namespace Beatbox {
             this.pipeline.set_timeline(this.timeline);
 			this.pipeline.get_bus().message.connect(this.on_pipeline_message);
 
-			//this.pipeline.set_state(Gst.State.PLAYING);		// Pipeline is always live regardless of whether any elements are playing or not.
+			this.pipeline.set_state(Gst.State.PLAYING);		// Pipeline is always live regardless of whether any elements are playing or not.
         }
 
 		private void on_pipeline_message(Gst.Message msg)
 		{
+			this.log(msg.type.to_string());
 			if (msg.type == Gst.MessageType.ERROR)
 			{
 				Error error; string dbg;

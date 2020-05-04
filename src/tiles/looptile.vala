@@ -8,14 +8,15 @@ namespace Beatbox
 		float[] visu_l = new float[512];
 		float[] visu_r = new float[512];
 
-		GES.UriClip clip;
+		GES.UriClip? clip = null;
 		GES.Layer layer;
+
+		Gst.ClockID? end_notif_id = null;
 
 		public LoopTile(MainWindow app, string uri)
 		{
 			base(app);
 			this.uri = uri;
-			this.clip  = new GES.UriClip(uri);
 			this.layer = new GES.Layer();
 			app.timeline.add_layer(this.layer);
 
@@ -31,24 +32,43 @@ namespace Beatbox
 
 		public override void start()
 		{
-			print(@"started $(uri)\n");
-
-			this.clip.start = 0;//app.pipeline.get_clock().get_time() + Gst.SECOND;
-			this.clip.duration = 4 * Gst.SECOND;
-			this.clip.mute = false;
-			this.clip.in_point = 0;
-
+			print("started\n");
+			this.clip  = new GES.UriClip(uri);
 			this.layer.add_clip(this.clip);
-			app.pipeline.set_state(Gst.State.PLAYING);
+
+			this.clip.start = 0;//app.pipeline.get_base_time();
+			this.clip.duration = 4 * Gst.SECOND;
+			app.timeline.commit();
+
+	// 		print(@"$(this.clip.parent.start)\n");
+	//
+	// 		/* Here we set up to get notified at the time when the clip *should* finish. */
+	// 		this.end_notif_id = app.timeline.get_clock().new_single_shot_id(app.timeline.get_clock().get_time() + this.clip.duration);
+	// 		Gst.Clock.id_wait_async(this.end_notif_id, () => {
+	// 			print(@"=> Should have finished\n");
+	// 			this.clip = null;
+	// 			this.layer.remove_clip(this.clip);
+	// //			this.clip.duration = this.clip.start +
+	// 			app.timeline.commit();
+	// 			return false;
+	// 		});
 		}
 
 		public override void stop()
 		{
 			print("stopped\n");
+			this.layer.remove_clip(this.clip);
+			// this.clip.duration = app.timeline.get_clock().get_time() - this.clip.start;
+			app.timeline.commit();
+			this.clip = null;
+
+			// /* Unschedule the finished clip callback bc it happened early. */
+			// Gst.Clock.id_unschedule(this.end_notif_id);
+			// this.end_notif_id = null;
 		}
 
 		public override bool playing {
-			get { return false; }
+			get { return this.clip != null; }
 		}
 
 		public override void draw (Cairo.Context context, uint16 x, uint16 y)
