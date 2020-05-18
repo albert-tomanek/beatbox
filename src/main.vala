@@ -129,6 +129,7 @@ namespace Beatbox {
 			this.pipeline.get_bus().add_watch(GLib.Priority.DEFAULT, this.on_pipeline_message);
 
 			// this.pipeline.set_state(Gst.State.PLAYING);		// Pipeline is always live regardless of whether any elements are playing or not.
+			Timeout.add(100, () => { this.log(@"$(this.timeline.get_clock().get_time() / Gst.MSECOND)"); return true; });
         }
 
 		bool on_pipeline_message(Gst.Bus bus, Gst.Message msg)

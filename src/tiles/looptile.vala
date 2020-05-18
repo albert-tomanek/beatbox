@@ -84,6 +84,9 @@ namespace Beatbox
 			context.fill();
 
 			this.draw_amplitude(context, x, y);
+
+			double progress = (app.timeline.get_clock().get_time() / (double) this.clip.duration - this.clip.start / (double) this.clip.duration).clamp(0, 1);
+			this.draw_progress(context, x, y, progress);
 		}
 
 		public override void draw_border (Cairo.Context context, uint16 x, uint16 y)

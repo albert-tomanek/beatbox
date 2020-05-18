@@ -77,5 +77,15 @@ namespace Beatbox
 			context.arc     (x + TILE_CORNER_RADIUS, y + TILE_HEIGHT - TILE_CORNER_RADIUS, TILE_CORNER_RADIUS, Math.PI / 2, Math.PI);
 			context.close_path();
 		}
+
+		public static void draw_progress(Cairo.Context context, uint16 x, uint16 y, double progress)
+		{
+			plot_shape(context, x, y);
+			context.clip();
+
+			context.rectangle(x, y, progress * TILE_WIDTH, TILE_HEIGHT);
+			set_context_rgb(context, (uint32) 0xffffff40);
+			context.fill();
+		}
 	}
 }
