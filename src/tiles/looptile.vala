@@ -8,8 +8,8 @@ namespace Beatbox
 		float[] visu_l = new float[512];
 		float[] visu_r = new float[512];
 
-		GES.UriClip? clip = null;
 		GES.Layer layer;
+		GES.UriClip? clip = null;
 
 		Gst.ClockID? end_notif_id = null;
 
@@ -17,54 +17,63 @@ namespace Beatbox
 		{
 			base(app);
 			this.uri = uri;
+
 			this.layer = new GES.Layer();
 			app.timeline.add_layer(this.layer);
 
+			this.attached.connect((host) => {
+
+			});
+			this.detached.connect((host) => {
+
+			});
+
+			/* Start visualizing the sound file */
 			VisuUpdateCallback update = () => {
 				if (this.host != null)
-					this.host.queue_draw();
+				this.host.queue_draw();
 			};
 
-			this.load_repr.begin(update, 1, () => {
+			this.load_repr.begin(update, 4, () => {
 				update();
 			});
+		}
+
+		~LoopTile()
+		{
+			app.timeline.remove_layer(this.layer);
 		}
 
 		public override void start()
 		{
 			print("started\n");
-			this.clip  = new GES.UriClip(uri);
+			this.clip = new GES.UriClip(uri);
 			this.layer.add_clip(this.clip);
 
 			this.clip.start = 0;//app.pipeline.get_base_time();
 			this.clip.duration = 4 * Gst.SECOND;
 			app.timeline.commit();
 
-	// 		print(@"$(this.clip.parent.start)\n");
-	//
-	// 		/* Here we set up to get notified at the time when the clip *should* finish. */
-	// 		this.end_notif_id = app.timeline.get_clock().new_single_shot_id(app.timeline.get_clock().get_time() + this.clip.duration);
-	// 		Gst.Clock.id_wait_async(this.end_notif_id, () => {
-	// 			print(@"=> Should have finished\n");
-	// 			this.clip = null;
-	// 			this.layer.remove_clip(this.clip);
-	// //			this.clip.duration = this.clip.start +
-	// 			app.timeline.commit();
-	// 			return false;
-	// 		});
+			/* Here we set up to get notified at the time when the clip *should* finish. */
+			this.end_notif_id = app.timeline.get_clock().new_single_shot_id(app.timeline.get_clock().get_time() + this.clip.duration);
+			Gst.Clock.id_wait_async(this.end_notif_id, () => {
+				print(@"=> Should have finished\n");
+				this.clip = null;
+				return false;
+			});
 		}
 
 		public override void stop()
 		{
 			print("stopped\n");
 			this.layer.remove_clip(this.clip);
-			// this.clip.duration = app.timeline.get_clock().get_time() - this.clip.start;
 			app.timeline.commit();
 			this.clip = null;
+			// this.clip.duration = app.timeline.get_clock().get_time() - this.clip.start;
 
-			// /* Unschedule the finished clip callback bc it happened early. */
-			// Gst.Clock.id_unschedule(this.end_notif_id);
-			// this.end_notif_id = null;
+			/* Unschedule the finished clip callback bc it happened early. */
+			Gst.Clock.id_unschedule(this.end_notif_id);
+			this.end_notif_id = null;
 		}
 
 		public override bool playing {

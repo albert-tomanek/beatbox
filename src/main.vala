@@ -60,18 +60,21 @@ namespace Beatbox {
 			this.get_settings().get_default().gtk_application_prefer_dark_theme = true;
 
 			this.init_audio();
+			this.timeline.commited.connect(()=>{print(@"comitted!\n");});
 
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 3; col++) {
 				for (var row = 0; row < 3; row++) {
 					var host = new TileHost();
+					host.bar = col;
 					this.tile_grid.attach(host, row, col);
 					host.uri_dropped.connect((host, uri) => {
 						host.tile = new LoopTile(this, uri);
 					});
-					host.show();
 				}
 			}
+
+			this.tile_grid.show_all();
 
 			(this.tile_grid.get_child_at(0, 1) as TileHost).tile = new DummyTile(this);
 			(this.tile_grid.get_child_at(2, 0) as TileHost).tile = new DummyTile(this);
@@ -82,6 +85,25 @@ namespace Beatbox {
 			var css_provider = new Gtk.CssProvider();
 			css_provider.load_from_resource("/com/github/albert-tomanek/beatbox/style.css");
 			Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+		}
+
+		/* UI callbacks */
+		[GtkCallback]
+		internal void on_metronome_toggled(Gtk.ToggleButton tog)
+		{
+		}
+
+		[GtkCallback]
+		internal void on_play_toggled(Gtk.ToggleButton tog)
+		{
+			if (tog.active)
+			{
+				this.pipeline.set_state(Gst.State.PLAYING);
+			}
+			else
+			{
+				this.pipeline.set_state(Gst.State.PAUSED);
+			}
 		}
 
 		/* Audio playback */
@@ -99,20 +121,26 @@ namespace Beatbox {
 
             this.pipeline = new GES.Pipeline();
             this.pipeline.set_timeline(this.timeline);
-			this.pipeline.get_bus().message.connect(this.on_pipeline_message);
+			this.pipeline.get_bus().add_watch(GLib.Priority.DEFAULT, this.on_pipeline_message);
 
-			this.pipeline.set_state(Gst.State.PLAYING);		// Pipeline is always live regardless of whether any elements are playing or not.
+			// this.pipeline.set_state(Gst.State.PLAYING);		// Pipeline is always live regardless of whether any elements are playing or not.
         }
 
-		private void on_pipeline_message(Gst.Message msg)
+		bool on_pipeline_message(Gst.Bus bus, Gst.Message msg)
 		{
-			this.log(msg.type.to_string());
+			print(msg.type.to_string()+"\n");
+			if (msg.type == Gst.MessageType.RESET_TIME)
+			{
+				print("reset time\n");
+			}
 			if (msg.type == Gst.MessageType.ERROR)
 			{
 				Error error; string dbg;
 				msg.parse_error(out error, out dbg);
 				this.log(error.message + "\n" + dbg);
 			}
+
+			return true;
 		}
 
 		LivePlayback live;

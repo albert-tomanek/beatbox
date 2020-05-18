@@ -19,6 +19,7 @@ class Beatbox.TileHost : Gtk.DrawingArea
 	}
 
 	public signal void uri_dropped(TileHost host, string uri);
+	public uint bar { get; set; }
 
 	/* Gtk stuff */
 	public enum DndTargetType {
