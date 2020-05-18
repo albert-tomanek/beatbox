@@ -51,6 +51,10 @@ namespace Beatbox {
 	{
 		[GtkChild] Gtk.Grid tile_grid;
 		[GtkChild] Gtk.Label msg_label;
+		[GtkChild] Gtk.SpinButton bpm_entry;
+
+		public float bpm { get {return (float) this.bpm_entry.value; } }
+		public Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
 
 		public MainWindow(Gtk.Application app)
 		{
@@ -67,7 +71,7 @@ namespace Beatbox {
 				for (var row = 0; row < 3; row++) {
 					var host = new TileHost();
 					host.bar = col;
-					this.tile_grid.attach(host, row, col);
+					this.tile_grid.attach(host, col, row);
 					host.uri_dropped.connect((host, uri) => {
 						host.tile = new LoopTile(this, uri);
 					});
@@ -98,11 +102,12 @@ namespace Beatbox {
 		{
 			if (tog.active)
 			{
+				this.timeline.commit();
 				this.pipeline.set_state(Gst.State.PLAYING);
 			}
 			else
 			{
-				this.pipeline.set_state(Gst.State.PAUSED);
+				this.pipeline.set_state(Gst.State.READY);
 			}
 		}
 

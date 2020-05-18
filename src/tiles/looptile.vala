@@ -22,10 +22,16 @@ namespace Beatbox
 			app.timeline.add_layer(this.layer);
 
 			this.attached.connect((host) => {
+				stdout.printf("Added to bar %u\n", host.bar);
+				this.clip = new GES.UriClip(this.uri);
+				this.layer.add_clip(this.clip);
 
+				this.clip.start    = 4 * app.beat_duration * host.bar;//0;//app.pipeline.get_base_time();
+				this.clip.duration = 4 * app.beat_duration;
 			});
 			this.detached.connect((host) => {
-
+				this.layer.remove_clip(this.clip);
+				this.clip = null;
 			});
 
 			/* Start visualizing the sound file */
@@ -47,32 +53,22 @@ namespace Beatbox
 		public override void start()
 		{
 			print("started\n");
-			this.clip = new GES.UriClip(uri);
-			this.layer.add_clip(this.clip);
-
-			this.clip.start = 0;//app.pipeline.get_base_time();
-			this.clip.duration = 4 * Gst.SECOND;
-			app.timeline.commit();
 
 			/* Here we set up to get notified at the time when the clip *should* finish. */
-			this.end_notif_id = app.timeline.get_clock().new_single_shot_id(app.timeline.get_clock().get_time() + this.clip.duration);
-			Gst.Clock.id_wait_async(this.end_notif_id, () => {
-				print(@"=> Should have finished\n");
-				this.clip = null;
-				return false;
-			});
+			// this.end_notif_id = app.timeline.get_clock().new_single_shot_id(app.timeline.get_clock().get_time() + this.clip.duration);
+			// Gst.Clock.id_wait_async(this.end_notif_id, () => {
+			// 	print(@"=> Should have finished\n");
+			// 	return false;
+			// });
 		}
 
 		public override void stop()
 		{
 			print("stopped\n");
-			this.layer.remove_clip(this.clip);
-			app.timeline.commit();
-			this.clip = null;
 			// this.clip.duration = app.timeline.get_clock().get_time() - this.clip.start;
 
 			/* Unschedule the finished clip callback bc it happened early. */
-			Gst.Clock.id_unschedule(this.end_notif_id);
+			// Gst.Clock.id_unschedule(this.end_notif_id);
 			this.end_notif_id = null;
 		}
 
