@@ -13,7 +13,7 @@ namespace Beatbox
 		const uint32 DARK_BLUE  = 0x124780ff;
 		const uint32 BLACK      = 0x101010ff;
 		const uint32 WHITE      = (uint32) 0xffffffff;
-		const uint32 RED        = (uint32) 0xcd3436ff;
+		const uint32 RED        = (uint32) 0xcb2d2eff; //cd3436ff
 	}
 
 	void set_context_rgb(Cairo.Context context, uint32 colour)
@@ -78,13 +78,13 @@ namespace Beatbox
 			context.close_path();
 		}
 
-		public static void draw_progress(Cairo.Context context, uint16 x, uint16 y, double progress)
+		public static void draw_progress(Cairo.Context context, uint16 x, uint16 y, uint32 color, double progress)
 		{
 			plot_shape(context, x, y);
 			context.clip();
 
 			context.rectangle(x, y, progress * TILE_WIDTH, TILE_HEIGHT);
-			set_context_rgb(context, (uint32) 0xffffff40);
+			set_context_rgb(context, color);
 			context.fill();
 		}
 	}

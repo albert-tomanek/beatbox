@@ -10,6 +10,7 @@ namespace Beatbox
 
 		GES.Layer layer;
 		GES.UriClip? clip = null;
+		GES.UriClip? clip_old = null;
 
 		Gst.ClockID? end_notif_id = null;
 
@@ -22,15 +23,17 @@ namespace Beatbox
 			app.timeline.add_layer(this.layer);
 
 			this.attached.connect((host) => {
-				stdout.printf("Added to bar %u\n", host.bar);
 				this.clip = new GES.UriClip(this.uri);
 				this.layer.add_clip(this.clip);
 
-				this.clip.start    = 4 * app.beat_duration * host.bar;//0;//app.pipeline.get_base_time();
+				this.clip.start    = 4 * app.beat_duration * host.bar_no;//0;//app.pipeline.get_base_time();
 				this.clip.duration = 4 * app.beat_duration;
+
+				app.timeline.commit();
 			});
 			this.detached.connect((host) => {
 				this.layer.remove_clip(this.clip);
+				app.timeline.commit();
 				this.clip = null;
 			});
 
@@ -83,10 +86,10 @@ namespace Beatbox
 			this.plot_shape(context, x, y);
 			context.fill();
 
-			this.draw_amplitude(context, x, y);
+			double progress = app.timeline.get_clock() == null ? 0 : (get_running_time(app.timeline) / (double) this.clip.duration - this.clip.start / (double) this.clip.duration).clamp(0, 1);
+			this.draw_progress(context, x, y, (uint32) 0x1374c5ff, progress);
 
-			double progress = (app.timeline.get_clock().get_time() / (double) this.clip.duration - this.clip.start / (double) this.clip.duration).clamp(0, 1);
-			this.draw_progress(context, x, y, progress);
+			this.draw_amplitude(context, x, y);
 		}
 
 		public override void draw_border (Cairo.Context context, uint16 x, uint16 y)

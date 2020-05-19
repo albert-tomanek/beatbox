@@ -1,3 +1,13 @@
+enum DndTargetType {
+	TILE_PTR,
+	URI,
+}
+
+const Gtk.TargetEntry[] gtk_targetentries = {
+	{"com.github.albert-tomanek.beatbox.tile_instance_ptr", Gtk.TargetFlags.SAME_APP, DndTargetType.TILE_PTR},
+	{"text/uri-list", 0, DndTargetType.URI},
+};
+
 class Beatbox.TileHost : Gtk.DrawingArea
 {
 	private Tile? tile_;
@@ -18,20 +28,10 @@ class Beatbox.TileHost : Gtk.DrawingArea
 		}
 	}
 
+	public uint bar_no   { get; set; }
+	public uint track_no { get; set; }
+
 	public signal void uri_dropped(TileHost host, string uri);
-	public uint bar { get; set; }
-
-	/* Gtk stuff */
-	public enum DndTargetType {
-		TILE_PTR,
-		URI,
-	}
-
-	public const Gtk.TargetEntry[] gtk_targetentries = {
-		{"com.github.albert-tomanek.beatbox.tile_instance_ptr", Gtk.TargetFlags.SAME_APP, DndTargetType.TILE_PTR},
-		{"text/uri-list", 0, DndTargetType.URI},
-	};
-
 	private bool tile_being_dragged = false;
 
 	public TileHost()
@@ -50,19 +50,19 @@ class Beatbox.TileHost : Gtk.DrawingArea
 		this.button_release_event.connect(this.on_click);
 
 		/* Drag and Drop */
-		Gtk.drag_dest_set(this, Gtk.DestDefaults.MOTION, TileHost.gtk_targetentries, Gdk.DragAction.MOVE);
+		Gtk.drag_dest_set(this, Gtk.DestDefaults.MOTION, gtk_targetentries, Gdk.DragAction.MOVE);
 
 		this.notify["tile"].connect(this.on_tile_changed);
 
 		/* Queue a redraw every 50 milliseconds */
-		Timeout.add(50, () => { this.queue_draw(); return true; });
+		Timeout.add(1000/60, () => { this.queue_draw(); return true; });
 	}
 
 	void on_tile_changed()
 	{
 		if (this.tile != null)
 		{
-			Gtk.drag_source_set(this, Gdk.ModifierType.BUTTON1_MASK, TileHost.gtk_targetentries, Gdk.DragAction.MOVE);
+			Gtk.drag_source_set(this, Gdk.ModifierType.BUTTON1_MASK, gtk_targetentries, Gdk.DragAction.MOVE);
 
 			this.tile.notify["selected"].connect(() => { this.queue_draw(); });
 		}
@@ -114,26 +114,23 @@ class Beatbox.TileHost : Gtk.DrawingArea
 
 	private void on_rclick(Gdk.EventButton event)
 	{
-		// var context_menu = new Gtk.Menu();						// Because context_menu is a local variable, it would be destroyed after the current method ended. Therefore we have to attach it to a widget so that it is destroyed only once the widget is destoryed.
-		// context_menu.attach_to_widget(this, null);
-		//
-		// if (this.tile != null)
-		// {
-		// 	var item_delete_tile = new Gtk.MenuItem.with_mnemonic("_Delete tile");
-		// 	item_delete_tile.activate.connect(() => {
-		// 		foreach (Tile tile in this.grid.get_selection(this.tile))
-		// 		{
-		// 			tile.die();
-		// 		}
-		//
-		// 		this.grid.selected.clear();
-		// 	});
-		// 	context_menu.append(item_delete_tile);
-		//
-		// 	context_menu.show_all();
-		// 	context_menu.popup(null, this, null, 0, event.get_time());
-		// 	//context_menu.popup_at_pointer(event);		// FIXME: GTK
-		// }
+		var context_menu = new Gtk.Menu();						// Because context_menu is a local variable, it would be destroyed after the current method ended. Therefore we have to attach it to a widget so that it is destroyed only once the widget is destoryed.
+		context_menu.attach_to_widget(this, null);
+
+		if (this.tile != null)
+		{
+			var item_delete_tile = new Gtk.MenuItem.with_mnemonic("_Delete");
+			item_delete_tile.activate.connect(this.action_delete);
+			context_menu.append(item_delete_tile);
+
+			context_menu.show_all();
+			context_menu.popup_at_pointer(event);
+		}
+	}
+
+	private void action_delete()
+	{
+		this.tile = null;
 	}
 
 	/* Drag and drop -- source callbacks */
@@ -157,7 +154,7 @@ class Beatbox.TileHost : Gtk.DrawingArea
 	{
 		switch (target_type)
 		{
-			case TileHost.DndTargetType.TILE_PTR:
+			case DndTargetType.TILE_PTR:
 				this.tile.@ref();					// Manually increase the reference count to account for the pointer that we're sending as the selection data.
 				Tile[] _tile = {this.tile};
 				selection_data.set(selection_data.get_target(), (int) sizeof(void *) * 8, (uint8[])(_tile));
@@ -187,7 +184,7 @@ class Beatbox.TileHost : Gtk.DrawingArea
 
 		Gdk.Atom? target_type = null;
 		if (target_type == null)
-			target_type = find_atom_with_name("com.github.albert-tomanek.beatbox.tile_instance_ptr", context.list_targets());	//.nth_data(TileHost.DndTargetType.TILE_PTR);
+			target_type = find_atom_with_name("com.github.albert-tomanek.beatbox.tile_instance_ptr", context.list_targets());	//.nth_data(DndTargetType.TILE_PTR);
 		if (target_type == null)
 			target_type = find_atom_with_name("text/uri-list", context.list_targets());
 		if (target_type == null)

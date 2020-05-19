@@ -52,6 +52,7 @@ namespace Beatbox {
 		[GtkChild] Gtk.Grid tile_grid;
 		[GtkChild] Gtk.Label msg_label;
 		[GtkChild] Gtk.SpinButton bpm_entry;
+		[GtkChild] Gtk.ToggleButton play_button;
 
 		public float bpm { get {return (float) this.bpm_entry.value; } }
 		public Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
@@ -67,10 +68,11 @@ namespace Beatbox {
 			this.timeline.commited.connect(()=>{print(@"comitted!\n");});
 
 			/* Fill grid of tile spaces */
-			for (var col = 0; col < 3; col++) {
-				for (var row = 0; row < 3; row++) {
+			for (var col = 0; col < 4; col++) {
+				for (var row = 0; row < 4; row++) {
 					var host = new TileHost();
-					host.bar = col;
+					host.bar_no = col;
+					host.track_no = row;
 					this.tile_grid.attach(host, col, row);
 					host.uri_dropped.connect((host, uri) => {
 						host.tile = new LoopTile(this, uri);
@@ -111,6 +113,13 @@ namespace Beatbox {
 			}
 		}
 
+		/* UI helpers */
+
+		internal void foreach_tilehost(Gtk.Callback cb)
+		{
+			this.tile_grid.foreach(cb);
+		}
+
 		/* Audio playback */
         internal GES.Pipeline pipeline;  // Gstreamer pipeline
 		internal GES.Timeline timeline;  // Every time the user schedules a tile to start playing, it's added as a clip to the timeline.
@@ -128,22 +137,55 @@ namespace Beatbox {
             this.pipeline.set_timeline(this.timeline);
 			this.pipeline.get_bus().add_watch(GLib.Priority.DEFAULT, this.on_pipeline_message);
 
-			// this.pipeline.set_state(Gst.State.PLAYING);		// Pipeline is always live regardless of whether any elements are playing or not.
-			Timeout.add(100, () => { this.log(@"$(this.timeline.get_clock().get_time() / Gst.MSECOND)"); return true; });
+			this.pipeline.set_state(Gst.State.PAUSED);
+
+			Timeout.add(100, () => { this.log(@"$(this.timeline.get_base_time())\t$(this.timeline.get_clock().get_time() / Gst.MSECOND)"); return true; });
         }
+
+		// bool is_correctionary_seek = false;
+		// if (!is_correctionary_seek)
+		// {
+		// 	is_correctionary_seek = true;
+		// 	print("seeking...\n");
+		// 	this.timeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE, (int64) this.timeline.get_base_time());
+		// }
+		// else
+		// {
+		// 	is_correctionary_seek = false;
+		// }
 
 		bool on_pipeline_message(Gst.Bus bus, Gst.Message msg)
 		{
 			print(msg.type.to_string()+"\n");
-			if (msg.type == Gst.MessageType.RESET_TIME)
-			{
-				print("reset time\n");
-			}
-			if (msg.type == Gst.MessageType.ERROR)
-			{
-				Error error; string dbg;
-				msg.parse_error(out error, out dbg);
-				this.log(error.message + "\n" + dbg);
+			switch (msg.type) {
+				case Gst.MessageType.RESET_TIME:
+				{
+					print(@"$(this.timeline.get_base_time())\n");
+					break;
+				}
+				case Gst.MessageType.EOS:
+				{
+					this.play_button.set_active(false);
+					break;
+				}
+				case Gst.MessageType.ERROR:
+				{
+					Error error; string dbg;
+					msg.parse_error(out error, out dbg);
+					this.log(error.message + "\n" + dbg);
+					break;
+				}
+				case Gst.MessageType.ELEMENT:
+				{
+					//msg.parse_
+					print(@" `-> $(msg.get_structure().get_name())\n");
+					break;
+				}
+				case Gst.MessageType.DURATION_CHANGED:
+				{
+					print(@" `-> $(this.timeline.duration / Gst.MSECOND)\n");
+					break;
+				}
 			}
 
 			return true;
@@ -162,4 +204,9 @@ namespace Beatbox {
 	class LivePlayback
 	{
 	}
+}
+
+internal Gst.ClockTime get_running_time(Gst.Element element)
+{
+	return element.get_clock().get_time() - element.get_base_time();
 }
