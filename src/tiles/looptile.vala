@@ -2,7 +2,7 @@ using Math;
 
 namespace Beatbox
 {
-	class LoopTile : Tile
+	public class LoopTile : Tile
 	{
 		string uri;
 		float[] visu_l = new float[512];
@@ -10,7 +10,7 @@ namespace Beatbox
 
 		GES.Layer layer;
 		GES.UriClip? clip = null;
-		GES.UriClip? clip_old = null;
+		GES.UriClip? old_clip = null;	// You briefly have two while dragging
 
 		Gst.ClockID? end_notif_id = null;
 
@@ -22,18 +22,9 @@ namespace Beatbox
 			this.layer = new GES.Layer();
 			app.timeline.add_layer(this.layer);
 
-			this.attached.connect((host) => {
-				this.clip = new GES.UriClip(this.uri);
-				this.layer.add_clip(this.clip);
-
-				this.clip.start    = 4 * app.beat_duration * host.bar_no;//0;//app.pipeline.get_base_time();
-				this.clip.duration = 4 * app.beat_duration;
-
-				app.timeline.commit();
-			});
+			this.attached.connect(this.on_attached);	// I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
 			this.detached.connect((host) => {
-				this.layer.remove_clip(this.clip);
-				app.timeline.commit();
+				this.old_clip = this.clip;
 				this.clip = null;
 			});
 
@@ -43,14 +34,33 @@ namespace Beatbox
 				this.host.queue_draw();
 			};
 
-			this.load_repr.begin(update, 4, () => {
-				update();
-			});
+			this.load_repr.begin(update, 4);
 		}
 
 		~LoopTile()
 		{
+			this.layer.remove_clip(this.clip);
+			if (this.old_clip != null)
+				this.layer.remove_clip(this.old_clip);
 			app.timeline.remove_layer(this.layer);
+		}
+
+		void on_attached()
+		{
+			this.clip = new GES.UriClip(this.uri);
+			this.layer.add_clip(this.clip);
+
+			this.clip.start    = 4 * app.beat_duration * host.bar_no;//0;//app.pipeline.get_base_time();
+			this.clip.duration = 4 * app.beat_duration;
+
+			app.timeline.commit();
+
+			if (this.old_clip != null)
+			{
+				this.layer.remove_clip(this.old_clip);
+				this.old_clip = null;
+				app.timeline.commit();
+			}
 		}
 
 		public override void start()

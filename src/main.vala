@@ -47,7 +47,7 @@ namespace Beatbox {
     }
 
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/main.ui")]
-	class MainWindow : Gtk.ApplicationWindow
+	public class MainWindow : Gtk.ApplicationWindow
 	{
 		[GtkChild] Gtk.Grid tile_grid;
 		[GtkChild] Gtk.Label msg_label;
@@ -65,7 +65,6 @@ namespace Beatbox {
 			this.get_settings().get_default().gtk_application_prefer_dark_theme = true;
 
 			this.init_audio();
-			this.timeline.commited.connect(()=>{print(@"comitted!\n");});
 
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 4; col++) {
@@ -137,9 +136,7 @@ namespace Beatbox {
             this.pipeline.set_timeline(this.timeline);
 			this.pipeline.get_bus().add_watch(GLib.Priority.DEFAULT, this.on_pipeline_message);
 
-			this.pipeline.set_state(Gst.State.PAUSED);
-
-			Timeout.add(100, () => { this.log(@"$(this.timeline.get_base_time())\t$(this.timeline.get_clock().get_time() / Gst.MSECOND)"); return true; });
+//			Timeout.add(100, () => { this.log(@"$(this.timeline.get_base_time())\t$(this.timeline.get_clock().get_time() / Gst.MSECOND)"); return true; });
         }
 
 		// bool is_correctionary_seek = false;
@@ -156,7 +153,7 @@ namespace Beatbox {
 
 		bool on_pipeline_message(Gst.Bus bus, Gst.Message msg)
 		{
-			print(msg.type.to_string()+"\n");
+			// print(msg.type.to_string()+"\n");
 			switch (msg.type) {
 				case Gst.MessageType.RESET_TIME:
 				{
@@ -186,6 +183,16 @@ namespace Beatbox {
 					print(@" `-> $(this.timeline.duration / Gst.MSECOND)\n");
 					break;
 				}
+				case Gst.MessageType.STATE_CHANGED:
+				{
+					Gst.State old_state;
+					Gst.State new_state;
+					Gst.State pending_state;
+
+					msg.parse_state_changed (out old_state, out new_state, out pending_state);
+
+					break;
+				}
 			}
 
 			return true;
@@ -208,5 +215,5 @@ namespace Beatbox {
 
 internal Gst.ClockTime get_running_time(Gst.Element element)
 {
-	return element.get_clock().get_time() - element.get_base_time();
+	return element.get_clock().get_time() - element.get_start_time();
 }

@@ -21,7 +21,7 @@ namespace Beatbox
 		context.set_source_rgba(((colour & 0xff000000) >> 24) / 255f, ((colour & 0x00ff0000) >> 16) / 255f, ((colour & 0x0000ff00) >> 8) / 255f, ((colour & 0x000000ff) >> 0) / 255f);
 	}
 
-	abstract class Tile : Object
+	public abstract class Tile : Object
 	{
 		public weak TileHost? host { get; private set; }
 		public bool selected { get; set; }

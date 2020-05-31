@@ -8,7 +8,7 @@ const Gtk.TargetEntry[] gtk_targetentries = {
 	{"text/uri-list", 0, DndTargetType.URI},
 };
 
-class Beatbox.TileHost : Gtk.DrawingArea
+public class Beatbox.TileHost : Gtk.DrawingArea
 {
 	private Tile? tile_;
 	public  Tile? tile {
