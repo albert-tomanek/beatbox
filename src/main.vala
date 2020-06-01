@@ -69,7 +69,7 @@ namespace Beatbox {
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 4; col++) {
 				for (var row = 0; row < 4; row++) {
-					var host = new TileHost();
+					var host = new TileHost(this);
 					host.bar_no = col;
 					host.track_no = row;
 					this.tile_grid.attach(host, col, row);
@@ -114,9 +114,22 @@ namespace Beatbox {
 
 		/* UI helpers */
 
-		internal void foreach_tilehost(Gtk.Callback cb)
+		internal delegate void TileHostCallback(TileHost host);
+		public   delegate void TileCallback    (Tile     tile);
+
+		internal void foreach_tilehost(TileHostCallback callback)
 		{
-			this.tile_grid.foreach(cb);
+			this.tile_grid.foreach((widget) => {
+				callback(widget as TileHost);
+			});
+		}
+
+		public void foreach_tile(TileCallback callback)
+		{
+			this.foreach_tilehost((host) => {
+				if (host.tile != null)
+					callback(host.tile);
+			});
 		}
 
 		/* Audio playback */
@@ -153,11 +166,11 @@ namespace Beatbox {
 
 		bool on_pipeline_message(Gst.Bus bus, Gst.Message msg)
 		{
-			// print(msg.type.to_string()+"\n");
+			print(msg.type.to_string()+"");
 			switch (msg.type) {
 				case Gst.MessageType.RESET_TIME:
 				{
-					print(@"$(this.timeline.get_base_time())\n");
+					print(@"\n `-> $(this.timeline.get_base_time())");
 					break;
 				}
 				case Gst.MessageType.EOS:
@@ -175,12 +188,12 @@ namespace Beatbox {
 				case Gst.MessageType.ELEMENT:
 				{
 					//msg.parse_
-					print(@" `-> $(msg.get_structure().get_name())\n");
+					print(@"\n `-> $(msg.get_structure().get_name())");
 					break;
 				}
 				case Gst.MessageType.DURATION_CHANGED:
 				{
-					print(@" `-> $(this.timeline.duration / Gst.MSECOND)\n");
+					print(@"\n `-> $(this.timeline.duration / Gst.MSECOND)");
 					break;
 				}
 				case Gst.MessageType.STATE_CHANGED:
@@ -190,11 +203,12 @@ namespace Beatbox {
 					Gst.State pending_state;
 
 					msg.parse_state_changed (out old_state, out new_state, out pending_state);
-
+					print(@"\t$(old_state) => $(new_state)");
 					break;
 				}
 			}
 
+			print("\n");
 			return true;
 		}
 

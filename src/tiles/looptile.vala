@@ -40,8 +40,9 @@ namespace Beatbox
 		~LoopTile()
 		{
 			this.layer.remove_clip(this.clip);
-			if (this.old_clip != null)
+			if (this.old_clip != null) {
 				this.layer.remove_clip(this.old_clip);
+			}
 			app.timeline.remove_layer(this.layer);
 		}
 
@@ -50,7 +51,7 @@ namespace Beatbox
 			this.clip = new GES.UriClip(this.uri);
 			this.layer.add_clip(this.clip);
 
-			this.clip.start    = 4 * app.beat_duration * host.bar_no;//0;//app.pipeline.get_base_time();
+			this.clip.start    = 4 * app.beat_duration * host.bar_no;
 			this.clip.duration = 4 * app.beat_duration;
 
 			app.timeline.commit();

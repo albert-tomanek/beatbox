@@ -10,6 +10,8 @@ const Gtk.TargetEntry[] gtk_targetentries = {
 
 public class Beatbox.TileHost : Gtk.DrawingArea
 {
+	weak MainWindow app;
+
 	private Tile? tile_;
 	public  Tile? tile {
 		set {
@@ -34,8 +36,11 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 	public signal void uri_dropped(TileHost host, string uri);
 	private bool tile_being_dragged = false;
 
-	public TileHost()
+	public TileHost(MainWindow app)
 	{
+		this.app = app;
+
+		this.can_focus = true;
 		this.set_size_request(
 			TILE_WIDTH + (2 * TILE_BORDER_OFFSET) + (2 * TILE_BORDER_WIDTH),
 			TILE_WIDTH + (2 * TILE_BORDER_OFFSET) + (2 * TILE_BORDER_WIDTH)
@@ -76,37 +81,39 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 
 	private bool on_click(Gdk.EventButton event)
 	{
-		Gdk.ModifierType mods;
+		this.grab_focus();
 
-		switch (event.button)
+		Gdk.ModifierType mods;
+		event.get_state(out mods);
+
+		/* Change with what is selected */
+		bool ctrl_key = (mods & Gdk.ModifierType.CONTROL_MASK) != 0;
+		bool right_click = (event.button == 3);
+
+		if (!right_click)
 		{
-			case 1:
+			if (ctrl_key)
+			{
 				if (this.tile != null)
-				{
-					event.get_state(out mods);
-					if ((mods & Gdk.ModifierType.CONTROL_MASK) != 0)
-					{
-						/* Control-click to select */
-						if (this.tile != null)
-							this.tile.selected = !this.tile.selected;
-					}
-					else
-					{
-						/* Normal click to stop/start */
-						if (this.tile.playing)
-						{
-							this.tile.stop();
-						}
-						else
-						{
-							this.tile.start();
-						}
-					}
-				}
-				break;
-			case 3:
-				this.on_rclick(event);
-				break;
+					this.tile.selected = !this.tile.selected;
+			}
+			else
+			{
+				app.foreach_tile((tile) => { tile.selected = false; });
+				if (this.tile != null)
+					this.tile.selected = true;
+			}
+		}
+		else
+		{
+			if (this.tile != null)
+				this.tile.selected = true;
+		}
+
+		/* Do stuff */
+		if (event.button == 3)
+		{
+			this.on_rclick(event);
 		}
 
 		return true;	// true to stop other handlers from being invoked for the event.
@@ -117,20 +124,17 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 		var context_menu = new Gtk.Menu();						// Because context_menu is a local variable, it would be destroyed after the current method ended. Therefore we have to attach it to a widget so that it is destroyed only once the widget is destoryed.
 		context_menu.attach_to_widget(this, null);
 
-		if (this.tile != null)
-		{
-			var item_delete_tile = new Gtk.MenuItem.with_mnemonic("_Delete");
-			item_delete_tile.activate.connect(this.action_delete);
-			context_menu.append(item_delete_tile);
+		var item_delete_tile = new Gtk.MenuItem.with_mnemonic("_Delete");
+		item_delete_tile.activate.connect(() => {
+			app.foreach_tile((tile) => {
+				if (tile.selected)
+					tile.host.tile = null;	// Remove the tile from its host, hence deleting it.
+			});
+		});
+		context_menu.append(item_delete_tile);
 
-			context_menu.show_all();
-			context_menu.popup_at_pointer(event);
-		}
-	}
-
-	private void action_delete()
-	{
-		this.tile = null;
+		context_menu.show_all();
+		context_menu.popup_at_pointer(event);
 	}
 
 	/* Drag and drop -- source callbacks */
