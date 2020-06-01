@@ -105,6 +105,7 @@ code_files = files(
     'src/main.vala',
 	'src/tile.vala',
 	'src/tilehost.vala',
+	'src/sample.vala',
 	'src/tiles/dummytile.vala',
 	'src/tiles/looptile.vala',
 )

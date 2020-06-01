@@ -53,6 +53,7 @@ namespace Beatbox {
 		[GtkChild] Gtk.Label msg_label;
 		[GtkChild] Gtk.SpinButton bpm_entry;
 		[GtkChild] Gtk.ToggleButton play_button;
+		[GtkChild] Gtk.Revealer sample_revealer;
 
 		public float bpm { get {return (float) this.bpm_entry.value; } }
 		public Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
@@ -110,6 +111,22 @@ namespace Beatbox {
 			{
 				this.pipeline.set_state(Gst.State.READY);
 			}
+		}
+
+		[GtkCallback]
+		internal void on_show_sample()
+		{
+			this.sample_revealer.reveal_child = !this.sample_revealer.reveal_child;
+			// if (this.sample_revealer.child_revealed)
+			// {
+			// 	this.sample_revealer.transition_type = Gtk.RevealerTransitionType.SLIDE_DOWN;
+			// 	this.sample_revealer.reveal_child = false;
+			// }
+			// else
+			// {
+			// 	this.sample_revealer.transition_type = Gtk.RevealerTransitionType.SLIDE_UP;
+			// 	this.sample_revealer.reveal_child = true;
+			// }
 		}
 
 		/* UI helpers */
