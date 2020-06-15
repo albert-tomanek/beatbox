@@ -28,6 +28,7 @@ message ('Listing dependencies')
 dependencies = [
     dependency('gio-unix-2.0', version: '>=2.20'),
     dependency('granite'),
+    dependency('libdazzle-1.0'),
 	dependency('gstreamer-1.0'),
 	dependency('gstreamer-audio-1.0'),
 	dependency('gstreamer-app-1.0'),
@@ -120,4 +121,5 @@ executable(
     dependencies: dependencies,
     install: true,
 	include_directories: include_directories('src/gst/'),
+    link_args: ['-Wl,--no-as-needed'],  # Dazzle's not linked without this for some reason.
 )
