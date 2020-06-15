@@ -29,10 +29,12 @@ namespace Beatbox
 		[GtkChild] Gtk.DrawingArea sample_area;
 		[GtkChild] Gtk.ScrolledWindow scrollwindow;
 
-		[GtkChild] Gtk.DrawingArea empty;
+		[GtkChild] Gtk.Label empty_l;
+		[GtkChild] Gtk.Label empty_r;
 		[GtkChild] Gtk.Label label_l;
 		[GtkChild] Gtk.Label label_r;
-		[GtkChild] Dazzle.MultiPaned paned;
+		[GtkChild] Gtk.Paned paned_l;
+		[GtkChild] Gtk.Paned paned_r;
 
 		[GtkChild] Gtk.Adjustment hscroll_adjustment;
 
@@ -59,9 +61,8 @@ namespace Beatbox
 		void on_zoom_changed()
 		{
 			this.sample_area.set_size_request(l_start + this.sample_width + l_start, -1);		// l_start is added for the empty padding at the start and end of the sample
-			this.empty.set_size_request((int) (this.sec_pixels * this.duration), -1);
-			this.label_l.set_size_request(this.l_start, -1);
-			this.label_r.set_size_request(this.l_start, -1);
+			this.paned_l.set_position(l_start);
+			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
 
 			this.scrollwindow.hadjustment.value = this.sample_width * this.start;
 		}
@@ -70,6 +71,7 @@ namespace Beatbox
 		bool on_scroll(Gdk.EventScroll event)
 		{
 			// print(@"$(event.get_source_device().input_source), $(event.delta_y)\n");
+			print(@"$(this.scrollwindow.hadjustment.lower) < $(this.scrollwindow.hadjustment.value) < $(this.scrollwindow.hadjustment.upper)\t zoom: $(zoom) sec_pixels=$(sec_pixels)\tdy: $(event.delta_y)\n");
 			if (event.get_source_device().input_source == Gdk.InputSource.MOUSE)	// Doesn't recognise my touchpad for some reason...
 			{
 				if ((event.state & Gdk.ModifierType.CONTROL_MASK) != 0)
@@ -81,7 +83,6 @@ namespace Beatbox
 					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 0.1 : 1) * (double) this.sample_area.get_allocated_width() / 128.0;
 					this.start = this.scrollwindow.hadjustment.value / (double) sample_width;
 				}
-				print(@"$(this.scrollwindow.hadjustment.lower) < $(this.scrollwindow.hadjustment.value) < $(this.scrollwindow.hadjustment.upper)\t zoom: $(zoom) sec_pixels=$(sec_pixels)\tdy: $(event.delta_y)\n");
 			}
 
 			return false;
