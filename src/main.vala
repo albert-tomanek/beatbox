@@ -54,6 +54,7 @@ namespace Beatbox {
 		[GtkChild] Gtk.SpinButton bpm_entry;
 		[GtkChild] Gtk.ToggleButton play_button;
 		[GtkChild] Gtk.Revealer sample_revealer;
+		internal SampleViewer sample_viewer;
 
 		public float bpm { get {return (float) this.bpm_entry.value; } }
 		public Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
@@ -66,6 +67,13 @@ namespace Beatbox {
 			this.get_settings().get_default().gtk_application_prefer_dark_theme = true;
 
 			this.init_audio();
+			this.init_ui();
+		}
+
+		private void init_ui()
+		{
+			this.sample_viewer = new SampleViewer();
+			this.sample_revealer.add(this.sample_viewer);
 
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 4; col++) {
@@ -81,9 +89,6 @@ namespace Beatbox {
 			}
 
 			this.tile_grid.show_all();
-
-			(this.tile_grid.get_child_at(0, 1) as TileHost).tile = new DummyTile(this);
-			(this.tile_grid.get_child_at(2, 0) as TileHost).tile = new DummyTile(this);
 		}
 
 		private void load_style()

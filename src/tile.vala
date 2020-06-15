@@ -7,7 +7,7 @@ namespace Beatbox
 	const uint16 TILE_BORDER_WIDTH  = 2;	// How wide the tile border is
 	const uint16 TILE_SPACING = 4;
 
-	namespace Palette
+	namespace TilePalette
 	{
 		const uint32 LIGHT_BLUE = 0x38acffc0;
 		const uint32 DARK_BLUE  = 0x124780ff;

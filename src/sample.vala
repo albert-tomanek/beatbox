@@ -1,12 +1,14 @@
 namespace Beatbox
 {
-	class Sample : Object
+	public class Sample : Object
 	{
 		public string uri { get; construct; }
 
-		internal float[] visu_l = new float[512];
-		internal float[] visu_r = new float[512];
+		internal float[] visu_l = new float[2048];
+		internal float[] visu_r = new float[2048];
 		internal signal void visu_updated();
+
+		public Gst.ClockTime duration { get; private construct; }
 
 		public Sample(string uri)
 		{
@@ -14,6 +16,7 @@ namespace Beatbox
 		}
 
 		construct {
+			this.duration = read_duration(this.uri);
 			this.load_repr.begin();
 		}
 
@@ -35,7 +38,7 @@ namespace Beatbox
 			uridecodebin.pad_added.connect((pad) => { pad.link(audioconvert.get_static_pad("sink")); });
 
 			uridecodebin.set("uri", this.uri);
-			level.set("interval", this.get_duration() / 512);
+			level.set("interval", this.duration / 2048);
 
 			Idle.add(load_repr.callback);
 			yield;
@@ -79,20 +82,52 @@ namespace Beatbox
 			pipeline.set_state(Gst.State.NULL);
 		}
 
-		private Gst.ClockTime get_duration()
+		private static Gst.ClockTime read_duration(string uri)
 		{
 			var discoverer = new Gst.PbUtils.Discoverer(0);
-			var info = discoverer.discover_uri(this.uri);
+			var info = discoverer.discover_uri(uri);
 
 			return info.get_duration();
 		}
+
+		internal static void draw_amplitude(Sample sample, Cairo.Context context, int x, int y, int alloc_width, int alloc_height)
+		{
+			var half_height = (alloc_height / 2);
+			var baseline_y  = y + half_height;
+
+			context.move_to(x + 0, baseline_y);
+
+			/* Draw top half, left channel */
+			for (int i = 0; i < sample.visu_l.length; i++)
+			{
+				float amplitude = sample.visu_l[i];
+				context.line_to(
+					x + (i * alloc_width) / sample.visu_l.length,
+					baseline_y - (amplitude * half_height
+				));
+			}
+
+			/* Draw bottom half, right channel */
+			for (int i = sample.visu_r.length; i > 0 ; i--)
+			{
+				float amplitude = sample.visu_r[i];
+				context.line_to(
+					x + (i * alloc_width) / sample.visu_r.length,
+					baseline_y + (amplitude * half_height
+				));
+			}
+
+			context.close_path();
+			context.fill();
+		}
 	}
 
-	class ClipDef
+	[Compact]
+	public class ClipDef
 	{
-		Sample sample;
+		public Sample sample;
 
-		double start;		// These are fractions of the duration of the source sample.
-		double duration;
+		public double start;		// These are fractions of the duration of the source sample.
+		public double duration;
 	}
 }

@@ -4,7 +4,7 @@ namespace Beatbox
 {
 	public class LoopTile : Tile
 	{
-		Sample sample;
+		public Sample sample { get; private set; }
 
 		GES.Layer layer;
 		GES.UriClip? clip = null;
@@ -85,7 +85,7 @@ namespace Beatbox
 
 		public override void draw (Cairo.Context context, uint16 x, uint16 y)
 		{
-			set_context_rgb(context, Palette.DARK_BLUE);
+			set_context_rgb(context, TilePalette.DARK_BLUE);
 			context.set_line_join(Cairo.LineJoin.ROUND);
 			this.plot_shape(context, x, y);
 			context.fill();
@@ -93,41 +93,15 @@ namespace Beatbox
 			double progress = app.timeline.get_clock() == null ? 0 : (get_running_time(app.timeline) / (double) this.clip.duration - this.clip.start / (double) this.clip.duration).clamp(0, 1);
 			this.draw_progress(context, x, y, (uint32) 0x1374c5ff, progress);
 
-			this.draw_amplitude(context, x, y);
+			set_context_rgb(context, TilePalette.WHITE);
+			Sample.draw_amplitude(this.sample, context, x, y, TILE_WIDTH, TILE_HEIGHT);
 		}
 
 		public override void draw_border (Cairo.Context context, uint16 x, uint16 y)
 		{
-			set_context_rgb(context, Palette.LIGHT_BLUE);
+			set_context_rgb(context, TilePalette.LIGHT_BLUE);
 			this.plot_border(context, x, y);
 			context.stroke();
-		}
-
-		public void draw_amplitude(Cairo.Context context, uint16 x, uint16 y)
-		{
-			set_context_rgb(context, Palette.WHITE);
-
-			var half_height = (TILE_HEIGHT / 2);
-			var baseline_y  = y + half_height;
-
-			context.move_to(x + 0, baseline_y);
-
-			/* Draw top half, left channel */
-			for (int i = 0; i < TILE_WIDTH; i++)
-			{
-				float amplitude = this.sample.visu_l[i * sample.visu_l.length / TILE_WIDTH];
-				context.line_to(x + i, baseline_y - (amplitude * half_height));
-			}
-
-			/* Draw bottom half, right channel */
-			for (int i = TILE_WIDTH; i > 0; i--)
-			{
-				float amplitude = this.sample.visu_r[i * sample.visu_r.length / TILE_WIDTH];
-				context.line_to(x + i, baseline_y + (amplitude * half_height));
-			}
-
-			context.close_path();
-			context.fill();
 		}
 
 		// private Loop loop;

@@ -102,6 +102,10 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 				app.foreach_tile((tile) => { tile.selected = false; });
 				if (this.tile != null)
 					this.tile.selected = true;
+
+				LoopTile? looptile = this.tile as LoopTile;
+				if (looptile != null)
+					app.sample_viewer.sample = looptile.sample;
 			}
 		}
 		else
