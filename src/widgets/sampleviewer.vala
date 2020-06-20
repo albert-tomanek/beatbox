@@ -3,9 +3,9 @@ namespace Beatbox
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/sampleviewer.ui")]
 	public class SampleViewer : Gtk.Overlay
 	{
-		public Sample sample { get; set; }
+		public Sample? sample { get; set; }
 
-		double start {get;set;}		// As a fraction of duration
+		double start;		// As a fraction of duration
 		double duration;	// in seconds
 
 		public double zoom { get; set; default = 0; }
@@ -21,18 +21,15 @@ namespace Beatbox
 
 		int sample_width {	// Current width of the visualized sample in pixels (without padding)
 			get {
-				return (int) (this.sample.duration * this.sec_pixels / (double) Gst.SECOND);
+				return this.sample == null ? 0 : (int) (this.sample.duration * this.sec_pixels / (double) Gst.SECOND);
 			}
 		}
 
 		/* Child widgets */
 		[GtkChild] Gtk.DrawingArea sample_area;
 		[GtkChild] Gtk.ScrolledWindow scrollwindow;
+		[GtkChild] Gtk.Viewport viewport;
 
-		[GtkChild] Gtk.Label empty_l;
-		[GtkChild] Gtk.Label empty_r;
-		[GtkChild] Gtk.Label label_l;
-		[GtkChild] Gtk.Label label_r;
 		[GtkChild] Gtk.Paned paned_l;
 		[GtkChild] Gtk.Paned paned_r;
 
@@ -41,11 +38,9 @@ namespace Beatbox
 		construct {
 			this.notify["sample"].connect(this.on_new_sample);
 			this.notify["zoom"].connect(this.on_zoom_changed);
-			this.notify["start"].connect(()=>{print(@"START! $(this.start)\n");});
 			this.size_allocate.connect(this.on_zoom_changed);
 
 			this.sample_area.draw.connect_after(this.render_sample);
-			this.scrollwindow.hscrollbar_policy = Gtk.PolicyType.ALWAYS;
 		}
 
 		void on_new_sample()
@@ -59,7 +54,8 @@ namespace Beatbox
 		}
 
 		void on_zoom_changed()
-		{
+		{// THIS IS THE OFFENDING LINE
+			print(@"=> zoom: $(zoom)\twidth: $(l_start + this.sample_width + l_start)\n");
 			this.sample_area.set_size_request(l_start + this.sample_width + l_start, -1);		// l_start is added for the empty padding at the start and end of the sample
 			this.paned_l.set_position(l_start);
 			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
@@ -71,7 +67,6 @@ namespace Beatbox
 		bool on_scroll(Gdk.EventScroll event)
 		{
 			// print(@"$(event.get_source_device().input_source), $(event.delta_y)\n");
-			print(@"$(this.scrollwindow.hadjustment.lower) < $(this.scrollwindow.hadjustment.value) < $(this.scrollwindow.hadjustment.upper)\t zoom: $(zoom) sec_pixels=$(sec_pixels)\tdy: $(event.delta_y)\n");
 			if (event.get_source_device().input_source == Gdk.InputSource.MOUSE)	// Doesn't recognise my touchpad for some reason...
 			{
 				if ((event.state & Gdk.ModifierType.CONTROL_MASK) != 0)
@@ -90,8 +85,11 @@ namespace Beatbox
 
 		public bool render_sample (Cairo.Context context)
 		{
-			set_context_rgb(context, TilePalette.WHITE);
-			Sample.draw_amplitude(this.sample, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
+			if (this.sample != null)
+			{
+				set_context_rgb(context, TilePalette.WHITE);
+				Sample.draw_amplitude(this.sample, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
+			}
 
 			return true;
 		}
