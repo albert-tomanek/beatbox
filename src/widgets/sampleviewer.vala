@@ -5,7 +5,7 @@ namespace Beatbox
 	{
 		public Sample? sample { get; set; }
 
-		double start;		// As a fraction of duration
+		double start;		// As a fraction of duration of the whole sample
 		double duration;	// in seconds
 
 		public double zoom { get; set; default = 0; }
@@ -15,7 +15,7 @@ namespace Beatbox
 
 		int l_start {
 			get {
-				return int.max(0, (int) (this.get_allocated_width() - (this.duration * sec_pixels)) / 2);
+				return int.max(0, (int) ((this.get_allocated_width() - (this.duration * sec_pixels)) / 2.0));
 			}
 		}
 
@@ -54,8 +54,7 @@ namespace Beatbox
 		}
 
 		void on_zoom_changed()
-		{// THIS IS THE OFFENDING LINE
-			print(@"=> zoom: $(zoom)\twidth: $(l_start + this.sample_width + l_start)\n");
+		{
 			this.sample_area.set_size_request(l_start + this.sample_width + l_start, -1);		// l_start is added for the empty padding at the start and end of the sample
 			this.paned_l.set_position(l_start);
 			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
@@ -66,7 +65,6 @@ namespace Beatbox
 		[GtkCallback]
 		bool on_scroll(Gdk.EventScroll event)
 		{
-			// print(@"$(event.get_source_device().input_source), $(event.delta_y)\n");
 			if (event.get_source_device().input_source == Gdk.InputSource.MOUSE)	// Doesn't recognise my touchpad for some reason...
 			{
 				if ((event.state & Gdk.ModifierType.CONTROL_MASK) != 0)
@@ -75,7 +73,7 @@ namespace Beatbox
 				}
 				else
 				{
-					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 0.1 : 1) * (double) this.sample_area.get_allocated_width() / 128.0;
+					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 0.25 : 1) * 40;
 					this.start = this.scrollwindow.hadjustment.value / (double) sample_width;
 				}
 			}
