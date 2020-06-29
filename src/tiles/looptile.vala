@@ -6,8 +6,10 @@ namespace Beatbox
 	{
 		public Sample sample { get; private set; }
 
-		public double start_tm { get; set; default = 0; }		// As a fraction of duration of the whole sample
-		public double duration { get; set; default = 4; }		// in seconds
+		public Gst.ClockTime start_tm { get; set; default = 0 * Gst.SECOND; }
+		public Gst.ClockTime duration { get; set; default = 4 * Gst.SECOND; }
+
+		internal double _sv_zoom = 0;	// Zoom value for SampleViewer. Each LoopTile stores its own zoom.
 
 		GES.Layer layer;
 		GES.UriClip? clip = null;
@@ -19,9 +21,7 @@ namespace Beatbox
 		{
 			base(app);
 			this.sample = new Sample(uri);
-			this.sample.visu_updated.connect(() => {
-				this.host.queue_draw();
-			});
+			this.sample.visu_updated.connect(this.host.queue_draw);
 
 			this.layer = new GES.Layer();
 			app.timeline.add_layer(this.layer);
@@ -29,14 +29,20 @@ namespace Beatbox
 
 		construct
 		{
-			this.attached.connect(this.on_attached);	// I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
+			this.attached.connect_after(this.on_attached);	// connect_after because we need to leave the base to set this.host first. // I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
 			this.detached.connect((host) => {
 				this.old_clip = this.clip;
 				this.clip = null;
 			});
 
-			this.notify["start_tm"].connect(this.host.queue_draw);
-			this.notify["duration"].connect(this.host.queue_draw);
+			this.notify["start_tm"].connect(() => {
+				this.clip.in_point = this.start_tm;
+				this.host.queue_draw();
+			});
+			this.notify["duration"].connect(() => {
+				this.clip.duration = this.duration * Gst.SECOND;
+				this.host.queue_draw();
+			});
 		}
 
 		~LoopTile()
@@ -103,7 +109,11 @@ namespace Beatbox
 			this.draw_progress(context, x, y, (uint32) 0x1374c5ff, progress);
 
 			set_context_rgb(context, TilePalette.WHITE);
-			Sample.draw_amplitude(this.sample, context, x, y, TILE_WIDTH, TILE_HEIGHT);
+			Sample.draw_amplitude(
+				this.sample.visu_l[(this.sample.visu_l.length * this.start_tm / this.sample.duration) : (this.sample.visu_l.length * (this.start_tm + this.duration) / this.sample.duration)],
+				this.sample.visu_r[(this.sample.visu_r.length * this.start_tm / this.sample.duration) : (this.sample.visu_r.length * (this.start_tm + this.duration) / this.sample.duration)],
+				context, x, y, TILE_WIDTH, TILE_HEIGHT
+			);
 		}
 
 		public override void draw_border (Cairo.Context context, uint16 x, uint16 y)

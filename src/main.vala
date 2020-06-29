@@ -75,8 +75,8 @@ namespace Beatbox {
 		private void init_ui()
 		{
 			this.sample_viewer = new SampleViewer();
-            this.sample_viewer.vexpand = true;
 			this.sv_box.add(this.sample_viewer);
+            this.dock_bin.bottom_visible = true;
 
             // this.sample_revealer.size_allocate.connect(() => {  // This is a botch to account for the fact that DzlDockRevealer doesn't expand its child -- even though we request it.
             //     this.sample_viewer.set_size_request(-1, this.sample_revealer.get_allocated_height());

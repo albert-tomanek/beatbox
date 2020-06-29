@@ -81,7 +81,6 @@ namespace Beatbox
 
 			/* Wait for the stream to end */
 			pipeline.get_bus().poll(Gst.MessageType.EOS, Gst.CLOCK_TIME_NONE);
-
 			pipeline.set_state(Gst.State.NULL);
 		}
 
@@ -93,31 +92,34 @@ namespace Beatbox
 			return info.get_duration();
 		}
 
-		internal static void draw_amplitude(Sample sample, Cairo.Context context, int x, int y, int alloc_width, int alloc_height)
+		internal static void draw_amplitude(float[] visu_l, float[] visu_r, Cairo.Context context, int x, int y, int width, int height)
 		{
-			var half_height = (alloc_height / 2);
+			assert(visu_l.length == visu_r.length);
+
+			var half_height = (height / 2);
 			var baseline_y  = y + half_height;
+			var x_step = (float) width / (visu_l.length - 1);
 
 			context.move_to(x + 0, baseline_y);
 
 			/* Draw top half, left channel */
-			for (int i = 0; i < sample.visu_l.length; i++)
+			for (int i = 0; i < visu_l.length; i++)
 			{
-				float amplitude = sample.visu_l[i];
+				float amplitude = visu_l[i];
 				context.line_to(
-					x + (i * alloc_width) / sample.visu_l.length,
-					baseline_y - (amplitude * half_height
-				));
+					x + i * x_step,
+					baseline_y - (amplitude * half_height)
+				);
 			}
 
 			/* Draw bottom half, right channel */
-			for (int i = sample.visu_r.length; i > 0 ; i--)
+			for (int i = visu_r.length; i >= 0 ; i--)
 			{
-				float amplitude = sample.visu_r[i];
+				float amplitude = visu_r[i];
 				context.line_to(
-					x + (i * alloc_width) / sample.visu_r.length,
-					baseline_y + (amplitude * half_height
-				));
+					x + i * x_step,
+					baseline_y + (amplitude * half_height)
+				);
 			}
 
 			context.close_path();

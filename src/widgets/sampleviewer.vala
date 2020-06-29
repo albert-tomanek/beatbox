@@ -3,16 +3,20 @@ namespace Beatbox
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/sampleviewer.ui")]
 	public class SampleViewer : Gtk.Overlay
 	{
-		public LoopTile? loop { get; set; }
+		private LoopTile? _loop;
+		public  LoopTile? loop {
+			get { return _loop; }
+			set { on_release_sample(); _loop = value; on_new_sample(); }
+		}
 
-		public double zoom { get; set; default = 0; }
+		public double zoom { get; set; }
 		public double sec_pixels {
 			get { return Math.exp2(zoom) * 100; }	// At zoom 0, 1s = 100px
 		}
 
 		int l_start {
 			get {
-				return int.max(0, (int) ((this.get_allocated_width() - ((this.loop == null) ? 0 : this.loop.duration * sec_pixels)) / 2.0));
+				return int.max(0, (int) ((this.get_allocated_width() - ((this.loop == null) ? 0 : this.loop.duration / Gst.SECOND * sec_pixels)) / 2.0));
 			}
 		}
 
@@ -42,9 +46,19 @@ namespace Beatbox
 
 		void on_new_sample()
 		{
-			this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// TODO: Disconnect after a the sample's been removed?
+			if (this.loop != null)
+			{
+				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// TODO: Disconnect after a the sample's been removed?
+				this.zoom = this.loop._sv_zoom;
+			}
+		}
 
-			this.on_zoom_changed();		// Sample area needs to change length anyway
+		void on_release_sample()
+		{
+			if (this.loop != null)
+			{
+				this.loop._sv_zoom = this.zoom;
+			}
 		}
 
 		void on_zoom_changed()
@@ -54,7 +68,7 @@ namespace Beatbox
 			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
 
 			if (this.loop != null)
-				this.scrollwindow.hadjustment.value = this.sample_width * this.loop.start_tm;
+				this.scrollwindow.hadjustment.value = this.sample_width * (this.loop.start_tm / (double) this.loop.sample.duration);
 		}
 
 		[GtkCallback]
@@ -70,8 +84,8 @@ namespace Beatbox
 				}
 				else
 				{
-					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 8 : 30);
-					this.loop.start_tm = this.scrollwindow.hadjustment.value / (double) sample_width;
+					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 4 : 30);
+					this.loop.start_tm = (uint64) ((this.scrollwindow.hadjustment.value / (double) sample_width) * this.loop.sample.duration);
 				}
 			}
 
@@ -83,7 +97,7 @@ namespace Beatbox
 			if (this.loop != null)
 			{
 				set_context_rgb(context, TilePalette.WHITE);
-				Sample.draw_amplitude(this.loop.sample, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
+				Sample.draw_amplitude(this.loop.sample.visu_l, this.loop.sample.visu_r, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
 			}
 
 			return true;
