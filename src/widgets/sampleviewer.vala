@@ -3,10 +3,7 @@ namespace Beatbox
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/sampleviewer.ui")]
 	public class SampleViewer : Gtk.Overlay
 	{
-		public Sample? sample { get; set; }
-
-		double start;		// As a fraction of duration of the whole sample
-		double duration;	// in seconds
+		public LoopTile? loop { get; set; }
 
 		public double zoom { get; set; default = 0; }
 		public double sec_pixels {
@@ -15,13 +12,13 @@ namespace Beatbox
 
 		int l_start {
 			get {
-				return int.max(0, (int) ((this.get_allocated_width() - (this.duration * sec_pixels)) / 2.0));
+				return int.max(0, (int) ((this.get_allocated_width() - ((this.loop == null) ? 0 : this.loop.duration * sec_pixels)) / 2.0));
 			}
 		}
 
 		int sample_width {	// Current width of the visualized sample in pixels (without padding)
 			get {
-				return this.sample == null ? 0 : (int) (this.sample.duration * this.sec_pixels / (double) Gst.SECOND);
+				return (this.loop == null) ? 0 : (int) (this.loop.sample.duration * this.sec_pixels / (double) Gst.SECOND);
 			}
 		}
 
@@ -36,7 +33,7 @@ namespace Beatbox
 		[GtkChild] Gtk.Adjustment hscroll_adjustment;
 
 		construct {
-			this.notify["sample"].connect(this.on_new_sample);
+			this.notify["loop"].connect(this.on_new_sample);
 			this.notify["zoom"].connect(this.on_zoom_changed);
 			this.size_allocate.connect(this.on_zoom_changed);
 
@@ -45,12 +42,9 @@ namespace Beatbox
 
 		void on_new_sample()
 		{
-			this.start = 0;
-			this.duration = 4;//((4 * Gst.SECOND) / (double) this.sample.duration).clamp(0, 1);
+			this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// TODO: Disconnect after a the sample's been removed?
 
-			this.sample.visu_updated.connect(this.sample_area.queue_draw);
-
-			this.on_zoom_changed();	// Sample area needs to change length anyway
+			this.on_zoom_changed();		// Sample area needs to change length anyway
 		}
 
 		void on_zoom_changed()
@@ -59,12 +53,15 @@ namespace Beatbox
 			this.paned_l.set_position(l_start);
 			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
 
-			this.scrollwindow.hadjustment.value = this.sample_width * this.start;
+			if (this.loop != null)
+				this.scrollwindow.hadjustment.value = this.sample_width * this.loop.start_tm;
 		}
 
 		[GtkCallback]
 		bool on_scroll(Gdk.EventScroll event)
 		{
+			if (this.loop == null) return false;
+
 			if (event.get_source_device().input_source == Gdk.InputSource.MOUSE)	// Doesn't recognise my touchpad for some reason...
 			{
 				if ((event.state & Gdk.ModifierType.CONTROL_MASK) != 0)
@@ -73,8 +70,8 @@ namespace Beatbox
 				}
 				else
 				{
-					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 0.25 : 1) * 40;
-					this.start = this.scrollwindow.hadjustment.value / (double) sample_width;
+					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 8 : 30);
+					this.loop.start_tm = this.scrollwindow.hadjustment.value / (double) sample_width;
 				}
 			}
 
@@ -83,10 +80,10 @@ namespace Beatbox
 
 		public bool render_sample (Cairo.Context context)
 		{
-			if (this.sample != null)
+			if (this.loop != null)
 			{
 				set_context_rgb(context, TilePalette.WHITE);
-				Sample.draw_amplitude(this.sample, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
+				Sample.draw_amplitude(this.loop.sample, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
 			}
 
 			return true;

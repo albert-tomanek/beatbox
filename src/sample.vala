@@ -2,6 +2,9 @@ namespace Beatbox
 {
 	public class Sample : Object
 	{
+		/* This contains metadata (and sometimes caches) about a sample.	*
+		 * It can be referenced by multiple loop tiles.						*/
+
 		public string uri { get; construct; }
 
 		internal float[] visu_l = new float[2048];
@@ -122,7 +125,6 @@ namespace Beatbox
 		}
 	}
 
-	[Compact]
 	public class ClipDef
 	{
 		public Sample sample;

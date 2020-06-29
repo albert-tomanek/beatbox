@@ -53,7 +53,9 @@ namespace Beatbox {
 		[GtkChild] Gtk.Label msg_label;
 		[GtkChild] Gtk.SpinButton bpm_entry;
 		[GtkChild] Gtk.ToggleButton play_button;
-		[GtkChild] Dazzle.DockRevealer sample_revealer;
+		// [GtkChild] Dazzle.DockRevealer sample_revealer;
+        [GtkChild] Dazzle.DockBin dock_bin;
+        [GtkChild] Gtk.Box sv_box;
 		internal SampleViewer sample_viewer;
 
 		public float bpm { get {return (float) this.bpm_entry.value; } }
@@ -73,7 +75,12 @@ namespace Beatbox {
 		private void init_ui()
 		{
 			this.sample_viewer = new SampleViewer();
-			this.sample_revealer.add(this.sample_viewer);
+            this.sample_viewer.vexpand = true;
+			this.sv_box.add(this.sample_viewer);
+
+            // this.sample_revealer.size_allocate.connect(() => {  // This is a botch to account for the fact that DzlDockRevealer doesn't expand its child -- even though we request it.
+            //     this.sample_viewer.set_size_request(-1, this.sample_revealer.get_allocated_height());
+            // });
 
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 4; col++) {
@@ -121,7 +128,7 @@ namespace Beatbox {
 		[GtkCallback]
 		internal void toggle_show_sample()
 		{
-            this.sample_revealer.reveal_child = !this.sample_revealer.reveal_child;
+            this.dock_bin.bottom_visible = !this.dock_bin.bottom_visible;
 		}
 
 		/* UI helpers */

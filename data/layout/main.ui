@@ -2,7 +2,7 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <requires lib="libdazzle" version="0.0"/>
+  <requires lib="libdazzle-1.0" version="1.0"/>
   <object class="GtkAdjustment" id="bpm_adjustment">
     <property name="upper">240</property>
     <property name="value">120</property>
@@ -116,27 +116,10 @@
           </packing>
         </child>
         <child>
-          <object class="DzlDockPaned">
+          <object class="DzlDockBin" id="dock_bin">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <child>
-              <object class="DzlDockRevealer" id="sample_revealer">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="hexpand">True</property>
-                <property name="position">200</property>
-                <property name="reveal_child">True</property>
-                <property name="transition_duration">350</property>
-                <property name="transition_type">slide-up</property>
-                <child>
-                  <placeholder/>
-                </child>
-              </object>
-              <packing>
-                <property name="index">1</property>
-                <property name="position">-1</property>
-              </packing>
-            </child>
+            <property name="bottom_visible">True</property>
             <child>
               <object class="GtkOverlay">
                 <property name="visible">True</property>
@@ -146,10 +129,14 @@
                   <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
                     <child>
                       <object class="GtkViewport">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
                         <property name="shadow_type">none</property>
                         <child>
                           <object class="GtkGrid" id="tile_grid">
@@ -242,10 +229,14 @@
                 </child>
               </object>
               <packing>
-                <property name="index">0</property>
-                <property name="position">-1</property>
+                <property name="pinned">True</property>
+                <property name="priority">400</property>
               </packing>
             </child>
+            <child type="bottom">
+			  <object class="GtkBox" id="sv_box">
+			  </object>
+			</child>
           </object>
           <packing>
             <property name="resize">True</property>

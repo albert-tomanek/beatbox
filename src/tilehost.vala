@@ -105,7 +105,7 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 
 				LoopTile? looptile = this.tile as LoopTile;
 				if (looptile != null)
-					app.sample_viewer.sample = looptile.sample;
+					app.sample_viewer.loop = looptile;
 			}
 		}
 		else
