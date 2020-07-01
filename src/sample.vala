@@ -11,7 +11,7 @@ namespace Beatbox
 		internal float[] visu_r = new float[2048];
 		internal signal void visu_updated();
 
-		public Gst.ClockTime duration { get; private construct; }
+		public _Gst.ClockTime duration { get; private construct; }
 
 		public Sample(string uri)
 		{
@@ -86,7 +86,7 @@ namespace Beatbox
 
 		private static Gst.ClockTime read_duration(string uri)
 		{
-			var discoverer = new Gst.PbUtils.Discoverer(0);
+			var discoverer = new Gst.PbUtils.Discoverer(500 * Gst.MSECOND);
 			var info = discoverer.discover_uri(uri);
 
 			return info.get_duration();

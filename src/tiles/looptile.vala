@@ -6,8 +6,8 @@ namespace Beatbox
 	{
 		public Sample sample { get; private set; }
 
-		public Gst.ClockTime start_tm { get; set; default = 0 * Gst.SECOND; }
-		public Gst.ClockTime duration { get; set; default = 4 * Gst.SECOND; }
+		public uint64 start_tm { get; set; default = 0; }
+		public _Gst.ClockTime duration { get; set; }
 
 		internal double _sv_zoom = 0;	// Zoom value for SampleViewer. Each LoopTile stores its own zoom.
 
@@ -17,16 +17,6 @@ namespace Beatbox
 
 		Gst.ClockID? end_notif_id = null;
 
-		public LoopTile(MainWindow app, string uri)
-		{
-			base(app);
-			this.sample = new Sample(uri);
-			this.sample.visu_updated.connect(this.host.queue_draw);
-
-			this.layer = new GES.Layer();
-			app.timeline.add_layer(this.layer);
-		}
-
 		construct
 		{
 			this.attached.connect_after(this.on_attached);	// connect_after because we need to leave the base to set this.host first. // I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
@@ -34,15 +24,24 @@ namespace Beatbox
 				this.old_clip = this.clip;
 				this.clip = null;
 			});
+		}
 
-			this.notify["start_tm"].connect(() => {
-				this.clip.in_point = this.start_tm;
-				this.host.queue_draw();
+		public LoopTile(MainWindow app, string uri)
+		{
+			base(app);
+			this.sample = new Sample(uri);
+			this.sample.visu_updated.connect(() => {
+				if (this.host != null)
+					this.host.queue_draw();
 			});
-			this.notify["duration"].connect(() => {
-				this.clip.duration = this.duration * Gst.SECOND;
-				this.host.queue_draw();
-			});
+
+			this.layer = new GES.Layer();
+			app.timeline.add_layer(this.layer);
+
+			this.duration = 4 * app.beat_duration;
+
+			this.notify["start-tm"].connect(this.update_clip);	// TODO: Keep the clip accross dragging between hosts and just change it's start time in the layer.
+			this.notify["duration"].connect(this.update_clip);
 		}
 
 		~LoopTile()
@@ -60,9 +59,7 @@ namespace Beatbox
 			this.layer.add_clip(this.clip);
 
 			this.clip.start    = 4 * app.beat_duration * host.bar_no;
-			this.clip.duration = 4 * app.beat_duration;
-
-			app.timeline.commit();
+			this.update_clip();		// commits the timeline too.
 
 			if (this.old_clip != null)
 			{
@@ -70,6 +67,14 @@ namespace Beatbox
 				this.old_clip = null;
 				app.timeline.commit();
 			}
+		}
+
+		internal void update_clip()
+		{
+			this.clip.duration = this.duration;
+			this.clip.in_point = this.start_tm;
+
+			app.timeline.commit();
 		}
 
 		public override void start()

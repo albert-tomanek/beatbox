@@ -50,7 +50,10 @@ namespace Beatbox
 			{
 				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// TODO: Disconnect after a the sample's been removed?
 				this.zoom = this.loop._sv_zoom;
+				this.on_zoom_changed();
 			}
+			
+			this.sample_area.queue_draw();
 		}
 
 		void on_release_sample()
@@ -90,6 +93,42 @@ namespace Beatbox
 			}
 
 			return false;
+		}
+
+		private Gst.ClockTime start_max {
+			get { return this.loop.sample.duration - this.loop.duration; }
+		}
+
+		[GtkCallback]
+		internal bool on_keypress(Gdk.EventKey event)
+		{
+			if (this.loop == null) return false;
+
+
+			if (event.keyval == Gdk.Key.Page_Down)
+			{
+				this.loop.start_tm = (this.loop.start_tm - this.loop.duration > 0) ? this.loop.start_tm - this.loop.duration : 0;
+			}
+			else if (event.keyval == Gdk.Key.Page_Up)
+			{
+				this.loop.start_tm = (this.loop.start_tm + this.loop.duration < start_max) ? this.loop.start_tm + this.loop.duration : start_max;
+			}
+			else if (event.keyval == Gdk.Key.Home)
+			{
+				this.loop.start_tm = 0;
+			}
+			else if (event.keyval == Gdk.Key.End)
+			{
+				this.loop.start_tm = start_max;
+			}
+			else
+			{
+				return false;
+			}
+
+			this.on_zoom_changed();
+
+			return true;	// Stop other handlers
 		}
 
 		public bool render_sample (Cairo.Context context)

@@ -59,7 +59,7 @@ namespace Beatbox {
 		internal SampleViewer sample_viewer;
 
 		public float bpm { get {return (float) this.bpm_entry.value; } }
-		public Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
+		public _Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
 
 		public MainWindow(Gtk.Application app)
 		{
@@ -77,10 +77,6 @@ namespace Beatbox {
 			this.sample_viewer = new SampleViewer();
 			this.sv_box.add(this.sample_viewer);
             this.dock_bin.bottom_visible = true;
-
-            // this.sample_revealer.size_allocate.connect(() => {  // This is a botch to account for the fact that DzlDockRevealer doesn't expand its child -- even though we request it.
-            //     this.sample_viewer.set_size_request(-1, this.sample_revealer.get_allocated_height());
-            // });
 
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 4; col++) {

@@ -36,9 +36,10 @@
     <child type="overlay">
       <object class="GtkEventBox">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
+        <property name="can_focus">True</property>
         <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK | GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK | GDK_PROXIMITY_IN_MASK | GDK_PROXIMITY_OUT_MASK | GDK_SUBSTRUCTURE_MASK | GDK_SCROLL_MASK | GDK_TOUCH_MASK | GDK_SMOOTH_SCROLL_MASK | GDK_TOUCHPAD_GESTURE_MASK | GDK_TABLET_PAD_MASK</property>
         <property name="above_child">True</property>
+        <signal name="key-press-event" handler="on_keypress" swapped="no"/>
         <signal name="scroll-event" handler="on_scroll" swapped="no"/>
         <child>
           <object class="GtkGrid">
@@ -54,7 +55,7 @@
                 <child>
                   <object class="GtkLabel" id="label_l">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can_focus">True</property>
                     <style>
                       <class name="osd"/>
                     </style>
@@ -67,7 +68,7 @@
                 <child>
                   <object class="GtkLabel" id="empty_l">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can_focus">True</property>
                   </object>
                   <packing>
                     <property name="resize">True</property>
@@ -89,7 +90,7 @@
                 <child>
                   <object class="GtkLabel" id="empty_r">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can_focus">True</property>
                   </object>
                   <packing>
                     <property name="resize">True</property>
@@ -99,7 +100,7 @@
                 <child>
                   <object class="GtkLabel" id="label_r">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can_focus">True</property>
                     <style>
                       <class name="osd"/>
                     </style>
