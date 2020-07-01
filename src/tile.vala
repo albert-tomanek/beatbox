@@ -33,12 +33,10 @@ namespace Beatbox
 		public virtual void stop()  { }
 		public abstract bool playing { get; }
 
-		protected weak MainWindow app;
+		public weak MainWindow app { get; construct; }
 
-		public Tile(MainWindow app)
+		construct
 		{
-			this.app = app;
-
 			this.attached.connect((host) => {this.host = host;});
 			this.detached.connect(()     => {this.host = null;});
 		}

@@ -127,6 +127,12 @@ namespace Beatbox {
             this.dock_bin.bottom_visible = !this.dock_bin.bottom_visible;
 		}
 
+        internal void on_dupl_tile(Tile tile)
+        {
+            var copy = new LoopTile.copy(tile as LoopTile);
+            (this.tile_grid.get_child_at((int) tile.host.bar_no + 1, (int) tile.host.track_no) as TileHost).tile = copy;
+        }
+
 		/* UI helpers */
 
 		internal delegate void TileHostCallback(TileHost host);

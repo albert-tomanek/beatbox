@@ -137,6 +137,12 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 		});
 		context_menu.append(item_delete_tile);
 
+		if (this.tile != null) {
+			var item_dup_tile = new Gtk.MenuItem.with_mnemonic("Du_plicate");
+			item_dup_tile.activate.connect(() => { app.on_dupl_tile(this.tile); });
+			context_menu.append(item_dup_tile);
+		}
+
 		context_menu.show_all();
 		context_menu.popup_at_pointer(event);
 	}

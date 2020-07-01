@@ -4,7 +4,7 @@ namespace Beatbox
 {
 	public class LoopTile : Tile
 	{
-		public Sample sample { get; private set; }
+		public Sample sample { get; construct; }
 
 		public uint64 start_tm { get; set; default = 0; }
 		public _Gst.ClockTime duration { get; set; }
@@ -24,24 +24,33 @@ namespace Beatbox
 				this.old_clip = this.clip;
 				this.clip = null;
 			});
-		}
 
-		public LoopTile(MainWindow app, string uri)
-		{
-			base(app);
-			this.sample = new Sample(uri);
 			this.sample.visu_updated.connect(() => {
 				if (this.host != null)
 					this.host.queue_draw();
 			});
 
-			this.layer = new GES.Layer();
-			app.timeline.add_layer(this.layer);
-
-			this.duration = 4 * app.beat_duration;
-
 			this.notify["start-tm"].connect(this.update_clip);	// TODO: Keep the clip accross dragging between hosts and just change it's start time in the layer.
 			this.notify["duration"].connect(this.update_clip);
+
+			this.layer = new GES.Layer();
+			app.timeline.add_layer(this.layer);
+		}
+
+		public LoopTile(MainWindow app, string uri)
+		{
+			Object(app: app, sample: new Sample(uri));
+
+			this.duration = 4 * app.beat_duration;
+		}
+
+		public LoopTile.copy(LoopTile src)
+		{
+			Object(app: src.app, sample: src.sample);
+
+			this.start_tm = src.start_tm;
+			this.duration = src.duration;
+			this._sv_zoom = src._sv_zoom;
 		}
 
 		~LoopTile()
@@ -71,10 +80,13 @@ namespace Beatbox
 
 		internal void update_clip()
 		{
-			this.clip.duration = this.duration;
-			this.clip.in_point = this.start_tm;
+			if (this.clip != null)
+			{
+				this.clip.duration = this.duration;
+				this.clip.in_point = this.start_tm;
 
-			app.timeline.commit();
+				app.timeline.commit();
+			}
 		}
 
 		public override void start()

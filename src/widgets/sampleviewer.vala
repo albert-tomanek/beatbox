@@ -3,13 +3,12 @@ namespace Beatbox
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/sampleviewer.ui")]
 	public class SampleViewer : Gtk.Overlay
 	{
-		private LoopTile? _loop;
-		public  LoopTile? loop {
-			get { return _loop; }
-			set { on_release_sample(); _loop = value; on_new_sample(); }
-		}
+		public LoopTile? loop { get; set; }
 
-		public double zoom { get; set; }
+		public double zoom {
+			get { return (this.loop != null) ? this.loop._sv_zoom : 0; }
+			set { this.loop._sv_zoom = value; }
+		}
 		public double sec_pixels {
 			get { return Math.exp2(zoom) * 100; }	// At zoom 0, 1s = 100px
 		}
@@ -38,7 +37,6 @@ namespace Beatbox
 
 		construct {
 			this.notify["loop"].connect(this.on_new_sample);
-			this.notify["zoom"].connect(this.on_zoom_changed);
 			this.size_allocate.connect(this.on_zoom_changed);
 
 			this.sample_area.draw.connect_after(this.render_sample);
@@ -49,19 +47,10 @@ namespace Beatbox
 			if (this.loop != null)
 			{
 				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// TODO: Disconnect after a the sample's been removed?
-				this.zoom = this.loop._sv_zoom;
 				this.on_zoom_changed();
 			}
-			
-			this.sample_area.queue_draw();
-		}
 
-		void on_release_sample()
-		{
-			if (this.loop != null)
-			{
-				this.loop._sv_zoom = this.zoom;
-			}
+			this.sample_area.queue_draw();
 		}
 
 		void on_zoom_changed()
@@ -84,6 +73,7 @@ namespace Beatbox
 				if ((event.state & Gdk.ModifierType.CONTROL_MASK) != 0)
 				{
 					this.zoom = double.min(this.zoom - event.delta_y, 2);
+					this.on_zoom_changed();
 				}
 				else
 				{

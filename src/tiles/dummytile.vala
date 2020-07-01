@@ -6,7 +6,7 @@ class Beatbox.DummyTile : Beatbox.Tile
 
 	public DummyTile(MainWindow app)
 	{
-		base(app);
+		Object(app: app);
 	}
 
 	public override void draw (Cairo.Context context, uint16 x, uint16 y)
