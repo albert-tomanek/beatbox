@@ -112,11 +112,7 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 		{
 			if (this.tile != null)
 				this.tile.selected = true;
-		}
 
-		/* Do stuff */
-		if (event.button == 3)
-		{
 			this.on_rclick(event);
 		}
 
@@ -130,6 +126,8 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 
 		var item_delete_tile = new Gtk.MenuItem.with_mnemonic("_Delete");
 		item_delete_tile.activate.connect(() => {
+			if (app.sample_viewer.loop.selected)
+				app.sample_viewer.loop = null;	// Get rid of that reference before they play the song again.
 			app.foreach_tile((tile) => {
 				if (tile.selected)
 					tile.host.tile = null;	// Remove the tile from its host, hence deleting it.
@@ -241,7 +239,7 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 					break;
 				}
 				default:
-					GLib.printerr("Incompatable data dropped.\n");
+					error("Incompatable data dropped.\n");
 					success = false;
 					break;
 			}

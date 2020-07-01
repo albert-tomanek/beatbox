@@ -5,6 +5,8 @@ namespace Beatbox
 	public class LoopTile : Tile
 	{
 		public Sample sample { get; construct; }
+//		internal Gst.BufferList cache;
+//		public float[] cache_visu = new float[512];
 
 		public uint64 start_tm { get; set; default = 0; }
 		public _Gst.ClockTime duration { get; set; }
@@ -12,30 +14,9 @@ namespace Beatbox
 		internal double _sv_zoom = 0;	// Zoom value for SampleViewer. Each LoopTile stores its own zoom.
 
 		GES.Layer layer;
-		GES.UriClip? clip = null;
-		GES.UriClip? old_clip = null;	// You briefly have two while dragging
+		GES.UriClip clip;
 
-		Gst.ClockID? end_notif_id = null;
-
-		construct
-		{
-			this.attached.connect_after(this.on_attached);	// connect_after because we need to leave the base to set this.host first. // I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
-			this.detached.connect((host) => {
-				this.old_clip = this.clip;
-				this.clip = null;
-			});
-
-			this.sample.visu_updated.connect(() => {
-				if (this.host != null)
-					this.host.queue_draw();
-			});
-
-			this.notify["start-tm"].connect(this.update_clip);	// TODO: Keep the clip accross dragging between hosts and just change it's start time in the layer.
-			this.notify["duration"].connect(this.update_clip);
-
-			this.layer = new GES.Layer();
-			app.timeline.add_layer(this.layer);
-		}
+		// Gst.ClockID? end_notif_id = null;
 
 		public LoopTile(MainWindow app, string uri)
 		{
@@ -53,40 +34,46 @@ namespace Beatbox
 			this._sv_zoom = src._sv_zoom;
 		}
 
+		construct
+		{
+			this.attached.connect_after(this.on_attached);	// connect_after because we need to leave the base to set this.host first. // I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
+
+			this.sample.visu_updated.connect(() => {
+				if (this.host != null)
+					this.host.queue_draw();
+			});
+
+			this.notify["start-tm"].connect(this.update_clip);	// TODO: Keep the clip accross dragging between hosts and just change it's start time in the layer.
+			this.notify["duration"].connect(this.update_clip);
+
+			this.layer = new GES.Layer();
+			app.timeline.add_layer(this.layer);
+
+			this.clip = new GES.UriClip(this.sample.uri);
+			this.layer.add_clip(this.clip);
+
+			this.update_clip();		// commits the timeline too.
+		}
+
 		~LoopTile()
 		{
 			this.layer.remove_clip(this.clip);
-			if (this.old_clip != null) {
-				this.layer.remove_clip(this.old_clip);
-			}
 			app.timeline.remove_layer(this.layer);
+			message("Removed %s\n", sample.uri);
 		}
 
 		void on_attached()
 		{
-			this.clip = new GES.UriClip(this.sample.uri);
-			this.layer.add_clip(this.clip);
-
-			this.clip.start    = 4 * app.beat_duration * host.bar_no;
-			this.update_clip();		// commits the timeline too.
-
-			if (this.old_clip != null)
-			{
-				this.layer.remove_clip(this.old_clip);
-				this.old_clip = null;
-				app.timeline.commit();
-			}
+			this.clip.start = 4 * app.beat_duration * host.bar_no;
+			app.timeline.commit();
 		}
 
 		internal void update_clip()
 		{
-			if (this.clip != null)
-			{
-				this.clip.duration = this.duration;
-				this.clip.in_point = this.start_tm;
+			this.clip.duration = this.duration;
+			this.clip.in_point = this.start_tm;
 
-				app.timeline.commit();
-			}
+			app.timeline.commit();
 		}
 
 		public override void start()
@@ -108,7 +95,7 @@ namespace Beatbox
 
 			/* Unschedule the finished clip callback bc it happened early. */
 			// Gst.Clock.id_unschedule(this.end_notif_id);
-			this.end_notif_id = null;
+			// this.end_notif_id = null;
 		}
 
 		public override bool playing {
