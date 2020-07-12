@@ -55,6 +55,7 @@ namespace Beatbox
 				this.on_zoom_changed();			// Change to the new tile's zoom, start and duration.
 				this.cacher.in_tile = this.loop;
 				this.cacher.out_cache = this.loop.cache;
+				this.cacher.run(8);
 			}
 
 			this.sample_area.queue_draw();
@@ -152,7 +153,7 @@ namespace Beatbox
 			if (this.loop.duration != _old_duration || this.loop.start_tm != _old_start_tm)
 			{
 				message("Caching %s\n", loop.sample.uri);
-				this.cacher.run(8,()=>{message("FINISHED caching\n");});
+				this.cacher.run(8);
 
 				_old_duration = this.loop.duration;
 				_old_start_tm = this.loop.start_tm;

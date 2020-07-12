@@ -247,8 +247,3 @@ namespace Beatbox {
 	{
 	}
 }
-
-internal Gst.ClockTime get_running_time(Gst.Element element)
-{
-	return element.get_clock().get_time() - element.get_start_time();
-}

@@ -72,9 +72,10 @@ namespace Beatbox
 			this.update_interval = update_interval;
 			visu_idx = 0;
 
-			/* Seeking will fail unless uridecodebin has read metadata about the URI that it's playing.
+			/* Seeking will fail unless uridecodebin has had an opportunity to read metadata about the URI that it's playing.
 			 * This doesn't happen until the element is set to PLAYING.
-			 * Hence, we need to play it first and wait until the *whole pipeline* is set to playing.	*/
+			 * Hence, we need to play it first and wait until the PLAYING state has propagated through the whole pipeline.	*/
+
 			pipeline.set_state(Gst.State.PLAYING);
 
 			wait_for_state_change(pipeline, Gst.State.PAUSED, Gst.State.PLAYING, 100 * Gst.MSECOND);
@@ -84,20 +85,22 @@ namespace Beatbox
 			 * If we registered it earlier, it would save the garbae created when ran the pipeline the first time and overrun the visu buffer.	*/
 
 			pipeline.seek(
-				1.0, Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.SEGMENT,
+				1.0, Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.SEGMENT | Gst.SeekFlags.ACCURATE,
 				Gst.SeekType.SET, (int64) in_tile.start_tm,
 				Gst.SeekType.SET, (int64) (in_tile.start_tm + in_tile.duration)
 			);
 
 			wait_for_state_change(pipeline, Gst.State.PAUSED, Gst.State.PLAYING, 100 * Gst.MSECOND);
 
-			pipeline.bus.message.connect(on_bus_message);	// <- yields inside on_bus_message after reading every n samples
+			var con_id = pipeline.bus.message.connect(on_bus_message);	// <- yields inside on_bus_message after reading every n samples
 
 			/* Wait till the segment has been processed */
-			pipeline.get_bus().poll(Gst.MessageType.SEGMENT_DONE, 1 * Gst.SECOND);
+
+			pipeline.bus.poll(Gst.MessageType.SEGMENT_DONE, 700 * Gst.MSECOND);
 			message("Segment DONE\n");
-			pipeline.set_state(Gst.State.READY);	// Keep the file open. We may be asked to cache a similar clip soon. (especially if they're scrolling.)
+			pipeline.bus.disconnect(con_id);
 			stdout.printf("%u\t%llu\n", visu_idx, pipeline.get_clock().get_time());
+			pipeline.set_state(Gst.State.READY);	// Keep the file open. We may be asked to cache a similar clip soon. (especially if they're scrolling.)
 			return;
 		}
 
@@ -105,7 +108,7 @@ namespace Beatbox
 		{
 			if (msg.type == Gst.MessageType.ELEMENT && msg.get_structure() != null)
 			{
-				if (msg.get_structure().get_name() == "level" /*&& visu_idx < this.out_cache.visu_l.length*/)
+				if (msg.get_structure().get_name() == "level" && visu_idx < this.out_cache.visu_l.length)	// Some elements like mpegaudioparse seem to feed a few buffers after the segment's finished, so we need to ignore those.
 				{
 					GLib.ValueArray channels;
 					msg.get_structure().get("rms", typeof(GLib.ValueArray), out channels);
@@ -116,10 +119,10 @@ namespace Beatbox
 
 					out_cache.visu_l[visu_idx] = out_cache.visu_r[visu_idx] = loudness.clamp(0, 1);		// TODO: Make both channels discrete
 
+					stdout.printf("%u\t%llu\n", visu_idx, pipeline.get_clock().get_time());
 					if (visu_idx % update_interval == 0)
 					{
 						out_cache.visu_updated();
-						stdout.printf("%u\t%llu\n", visu_idx, pipeline.get_clock().get_time());
 						yield;
 					}
 
@@ -129,17 +132,4 @@ namespace Beatbox
 		}
 
 	}
-
-	private void wait_for_state_change(Gst.Element element, Gst.State from, Gst.State to, Gst.ClockTime timeout = Gst.CLOCK_TIME_NONE)
-	{
-		Gst.State  old = Gst.State.NULL;
-		Gst.State @new = Gst.State.NULL;
-
-		do
-		{
-			var msg = element.bus.poll(Gst.MessageType.STATE_CHANGED, timeout);
-			msg.parse_state_changed(out old, out @new, null);
-			print(@"$(element.name): $(old) -> $(@new)\n");
-			} while (!(old == from && @new == to));
-		}
 }

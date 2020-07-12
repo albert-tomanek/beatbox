@@ -108,6 +108,7 @@ code_files = files(
 	'src/tilehost.vala',
 	'src/sample.vala',
     'src/gst/fix_gst.vala',
+    'src/gst/util.vala',
     'src/gst/samplecache.vala',
 	'src/widgets/sampleviewer.vala',
 	'src/tiles/dummytile.vala',
