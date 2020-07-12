@@ -60,7 +60,7 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 		this.notify["tile"].connect(this.on_tile_changed);
 
 		/* Queue a redraw every 50 milliseconds */
-		Timeout.add(1000/60, () => { this.queue_draw(); return true; });
+		Timeout.add(1000/60, () => { this.queue_draw(); return true; });	// TODO: Redraw only when playing.
 	}
 
 	void on_tile_changed()

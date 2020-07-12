@@ -3,7 +3,9 @@ namespace Beatbox
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/sampleviewer.ui")]
 	public class SampleViewer : Gtk.Overlay
 	{
-		public LoopTile? loop { get; set; }
+		public   LoopTile? loop { get; set; }
+
+		internal SampleCacher cacher = new SampleCacher();
 
 		public double zoom {
 			get { return (this.loop != null) ? this.loop._sv_zoom : 0; }
@@ -40,14 +42,19 @@ namespace Beatbox
 			this.size_allocate.connect(this.on_zoom_changed);
 
 			this.sample_area.draw.connect_after(this.render_sample);
+
+			Timeout.add(1000, recache_sample);
 		}
 
 		void on_new_sample()
 		{
 			if (this.loop != null)
 			{
-				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// TODO: Disconnect after a the sample's been removed?
-				this.on_zoom_changed();
+				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// If the whole sample's visu is still loading. // TODO: Disconnect after a the sample's been removed?
+				this.loop.cache.visu_updated.connect(this.sample_area.queue_draw);
+				this.on_zoom_changed();			// Change to the new tile's zoom, start and duration.
+				this.cacher.in_tile = this.loop;
+				this.cacher.out_cache = this.loop.cache;
 			}
 
 			this.sample_area.queue_draw();
@@ -127,6 +134,28 @@ namespace Beatbox
 			{
 				set_context_rgb(context, TilePalette.WHITE);
 				Sample.draw_amplitude(this.loop.sample.visu_l, this.loop.sample.visu_r, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
+
+				set_context_rgb(context, (uint32) 0xff0000ff);
+				Sample.draw_amplitude(this.loop.cache.visu_l, this.loop.cache.visu_r, context, (int) (l_start + (double)(this.loop.start_tm / Gst.SECOND) * sec_pixels), 0, (int)((double)(this.loop.duration / Gst.SECOND) * sec_pixels), this.sample_area.get_allocated_height());
+			}
+
+			return true;
+		}
+
+		Gst.ClockTime _old_duration;	// See if they've changed since last time we checked.
+		Gst.ClockTime _old_start_tm;
+
+		bool recache_sample()
+		{
+			if (this.loop == null) return true;
+
+			if (this.loop.duration != _old_duration || this.loop.start_tm != _old_start_tm)
+			{
+				message("Caching %s\n", loop.sample.uri);
+				this.cacher.run(8,()=>{message("FINISHED caching\n");});
+
+				_old_duration = this.loop.duration;
+				_old_start_tm = this.loop.start_tm;
 			}
 
 			return true;

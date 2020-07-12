@@ -126,12 +126,4 @@ namespace Beatbox
 			context.fill();
 		}
 	}
-
-	public class ClipDef
-	{
-		public Sample sample;
-
-		public double start;		// These are fractions of the duration of the source sample.
-		public double duration;
-	}
 }
