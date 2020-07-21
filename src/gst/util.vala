@@ -17,4 +17,24 @@ namespace Beatbox
 			print(@"$(element.name): $(old) -> $(@new)\n");
 		} while (!(old == from && @new == to));
 	}
+
+	delegate void GstElementFunc(Gst.Element element);
+
+	internal uint add_state_change_cb(Gst.Element element, Gst.State from, Gst.State to, GstElementFunc cb)
+	{
+		var id = element.bus.add_watch(Priority.DEFAULT, (bus, msg) => {
+			if (msg.type == Gst.MessageType.STATE_CHANGED)
+			{
+				Gst.State old, @new;
+				msg.parse_state_changed(out old, out @new, null);
+
+				if (old == from && @new == to)
+					cb(element);
+			}
+
+			return true;
+		});
+
+		return id;
+	}
 }

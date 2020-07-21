@@ -12,6 +12,12 @@ add_project_arguments([
     language: 'c',
 )
 
+add_project_arguments([
+        '--disable-warnings'    # They were getting annoying
+    ],
+    language: 'vala',
+)
+
 # Include the translations module
 message('Include the translations module')
 
