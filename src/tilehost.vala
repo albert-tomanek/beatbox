@@ -110,8 +110,11 @@ public class Beatbox.TileHost : Gtk.DrawingArea
 		}
 		else
 		{
-			if (this.tile != null)
+			if (this.tile != null && !ctrl_key)
+			{
+				app.foreach_tile((tile) => { tile.selected = false; });
 				this.tile.selected = true;
+			}
 
 			this.on_rclick(event);
 		}

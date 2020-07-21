@@ -53,6 +53,7 @@ namespace Beatbox {
 		[GtkChild] Gtk.Label msg_label;
 		[GtkChild] Gtk.SpinButton bpm_entry;
 		[GtkChild] Gtk.ToggleButton play_button;
+        [GtkChild] Gtk.Image play_button_image;
 		// [GtkChild] Dazzle.DockRevealer sample_revealer;
         [GtkChild] Dazzle.DockBin dock_bin;
         [GtkChild] Gtk.Box sv_box;
@@ -114,10 +115,12 @@ namespace Beatbox {
 			{
 				this.timeline.commit();
 				this.pipeline.set_state(Gst.State.PLAYING);
+                this.play_button_image.set_from_icon_name("media-playback-stop-symbolic", Gtk.IconSize.BUTTON);
 			}
 			else
 			{
 				this.pipeline.set_state(Gst.State.READY);
+                this.play_button_image.set_from_icon_name("media-playback-start-symbolic", Gtk.IconSize.BUTTON);
 			}
 		}
 
@@ -173,63 +176,51 @@ namespace Beatbox {
 //			Timeout.add(100, () => { this.log(@"$(this.timeline.get_base_time())\t$(this.timeline.get_clock().get_time() / Gst.MSECOND)"); return true; });
         }
 
-		// bool is_correctionary_seek = false;
-		// if (!is_correctionary_seek)
-		// {
-		// 	is_correctionary_seek = true;
-		// 	print("seeking...\n");
-		// 	this.timeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE, (int64) this.timeline.get_base_time());
-		// }
-		// else
-		// {
-		// 	is_correctionary_seek = false;
-		// }
-
 		bool on_pipeline_message(Gst.Bus bus, Gst.Message msg)
 		{
-			print(msg.type.to_string()+"");
+			// print(msg.type.to_string()+"");
 			switch (msg.type) {
-				case Gst.MessageType.RESET_TIME:
-				{
-					print(@"\n `-> $(this.timeline.get_base_time())");
-					break;
-				}
+				// case Gst.MessageType.RESET_TIME:
+				// {
+				// 	print(@"\n `-> $(this.timeline.get_base_time())");
+				// 	break;
+				// }
 				case Gst.MessageType.EOS:
 				{
 					this.play_button.set_active(false);
 					break;
 				}
-				case Gst.MessageType.ERROR:
+                case Gst.MessageType.ERROR:
 				{
 					Error error; string dbg;
 					msg.parse_error(out error, out dbg);
 					this.log(error.message + "\n" + dbg);
 					break;
 				}
-				case Gst.MessageType.ELEMENT:
-				{
-					//msg.parse_
-					print(@"\n `-> $(msg.get_structure().get_name())");
-					break;
-				}
-				case Gst.MessageType.DURATION_CHANGED:
-				{
-					print(@"\n `-> $(this.timeline.duration / Gst.MSECOND)");
-					break;
-				}
-				case Gst.MessageType.STATE_CHANGED:
-				{
-					Gst.State old_state;
-					Gst.State new_state;
-					Gst.State pending_state;
-
-					msg.parse_state_changed (out old_state, out new_state, out pending_state);
-					print(@"\t$(old_state) => $(new_state)");
-					break;
-				}
+				// case Gst.MessageType.ELEMENT:
+				// {
+				// 	//msg.parse_
+				// 	print(@"\n `-> $(msg.get_structure().get_name())");
+				// 	break;
+				// }
+				// case Gst.MessageType.DURATION_CHANGED:
+				// {
+				// 	print(@"\n `-> $(this.timeline.duration / Gst.MSECOND)");
+				// 	break;
+				// }
+				// case Gst.MessageType.STATE_CHANGED:
+				// {
+				// 	Gst.State old_state;
+				// 	Gst.State new_state;
+				// 	Gst.State pending_state;
+                //
+				// 	msg.parse_state_changed (out old_state, out new_state, out pending_state);
+				// 	print(@"\t$(old_state) => $(new_state)");
+				// 	break;
+				// }
 			}
 
-			print("\n");
+			// print("\n");
 			return true;
 		}
 

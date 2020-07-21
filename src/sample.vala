@@ -7,8 +7,8 @@ namespace Beatbox
 
 		public string uri { get; construct; }
 
-		internal float[] visu_l = new float[2048];
-		internal float[] visu_r = new float[2048];
+		internal float[] visu_l;
+		internal float[] visu_r;
 		internal signal void visu_updated();
 
 		public _Gst.ClockTime duration { get; private construct; }
@@ -20,6 +20,9 @@ namespace Beatbox
 
 		construct {
 			this.duration = read_duration(this.uri);
+
+			this.visu_l = new float[this.duration * 48 / Gst.SECOND];	// 48 samples for amplitude visualisation / second
+			this.visu_r = new float[this.duration * 48 / Gst.SECOND];
 			this.load_repr.begin();
 		}
 
@@ -41,7 +44,7 @@ namespace Beatbox
 			uridecodebin.pad_added.connect((pad) => { pad.link(audioconvert.get_static_pad("sink")); });
 
 			uridecodebin.set("uri", this.uri);
-			level.set("interval", this.duration / 2048);
+			level.set("interval", this.duration / this.visu_l.length);
 
 			Idle.add(load_repr.callback);
 			yield;
@@ -110,6 +113,8 @@ namespace Beatbox
 					x + i * x_step,
 					baseline_y - (amplitude * half_height)
 				);
+
+				// if (i == visu_l.length - 1)
 			}
 
 			/* Draw bottom half, right channel */

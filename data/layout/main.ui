@@ -31,7 +31,7 @@
                 <property name="receives_default">True</property>
                 <signal name="toggled" handler="on_play_toggled" swapped="no"/>
                 <child>
-                  <object class="GtkImage">
+                  <object class="GtkImage" id="play_button_image">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="icon_name">media-playback-start-symbolic</property>
