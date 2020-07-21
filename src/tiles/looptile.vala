@@ -6,7 +6,7 @@ namespace Beatbox
 	{
 		public Sample sample { get; construct; }
 
-		internal SampleCache cache = new SampleCache();		// A cache of the subset of the sample that this tile plays, so that it doesn't have to be seeked and loaded from disk every time. The only thing that will change/create the data here will be the widget that changes which part of the sample this tile plays (in our case the SampleViewer)
+//		internal SampleCache cache = new SampleCache();		// A cache of the subset of the sample that this tile plays, so that it doesn't have to be seeked and loaded from disk every time. The only thing that will change/create the data here will be the widget that changes which part of the sample this tile plays (in our case the SampleViewer)
 
 		public uint64 start_tm { get; set; default = 0; }
 		public _Gst.ClockTime duration { get; set; }
@@ -32,15 +32,13 @@ namespace Beatbox
 			this.start_tm = src.start_tm;
 			this.duration = src.duration;
 			this._sv_zoom = src._sv_zoom;
-
-			this.cache = new SampleCache.copy(src.cache);	// One's already been initialized but we're gonna replace it.
 		}
 
 		construct
 		{
 			this.attached.connect_after(this.on_attached);	// connect_after because we need to leave the base to set this.host first. // I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
 
-			this.cache.visu_updated.connect(() => {
+			this.sample.visu_updated.connect(() => {
 				if (this.host != null)
 					this.host.queue_draw();
 			});
@@ -115,7 +113,11 @@ namespace Beatbox
 			this.draw_progress(context, x, y, (uint32) 0x1374c5ff, progress);
 
 			set_context_rgb(context, TilePalette.WHITE);
-			Sample.draw_amplitude(this.cache.visu_l, this.cache.visu_r, context, x, y, TILE_WIDTH, TILE_HEIGHT);
+			Sample.draw_amplitude(
+				this.sample.visu_l[(this.sample.visu_l.length * this.start_tm / this.sample.duration) : (this.sample.visu_l.length * (this.start_tm + this.duration) / this.sample.duration)],
+				this.sample.visu_r[(this.sample.visu_r.length * this.start_tm / this.sample.duration) : (this.sample.visu_r.length * (this.start_tm + this.duration) / this.sample.duration)],
+				context, x, y, TILE_WIDTH, TILE_HEIGHT
+			);
 		}
 
 		public override void draw_border (Cairo.Context context, uint16 x, uint16 y)
