@@ -95,18 +95,20 @@ namespace Beatbox
 			return info.get_duration();
 		}
 
-		internal static void draw_amplitude(float[] visu_l, float[] visu_r, Cairo.Context context, int x, int y, int width, int height)
+		internal static void draw_amplitude(float[] visu_l, float[] visu_r, Cairo.Context context, int x, int y, int width, int height, int _visu_offset = 0)
 		{
 			assert(visu_l.length == visu_r.length);
 
 			var half_height = (height / 2);
 			var baseline_y  = y + half_height;
-			var x_step = (float) width / (visu_l.length - 1);
+			var x_step = (float) width / (visu_l.length  - 1);
+			int i_step = (int) (x_step > 1 ? 1 : 1 / x_step);		// If there's more than one aplitude pt per pixel, increment the index by more than 1 each time to skip some.
+			int i = i_step - (_visu_offset % i_step);		// Usually 0. If we draw only every nth enrty in the array, this ensures that we skip the same values each time and hence prevents the flickering that would otherwise happen while scrolling.
 
 			context.move_to(x + 0, baseline_y);
 
 			/* Draw top half, left channel */
-			for (int i = 0; i < visu_l.length; i++)
+			for (; i < visu_l.length; i += i_step)	// <- will usually be += 1 unless x_step is tiny.
 			{
 				float amplitude = visu_l[i];
 				context.line_to(
@@ -116,7 +118,7 @@ namespace Beatbox
 			}
 
 			/* Draw bottom half, right channel */
-			for (int i = visu_r.length; i >= 0 ; i--)
+			for (; i >= 0 ; i -= i_step)
 			{
 				float amplitude = visu_r[i];
 				context.line_to(

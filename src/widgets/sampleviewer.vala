@@ -62,7 +62,7 @@ namespace Beatbox
 		}
 
 		void on_zoom_changed()
-		{message("Zoom changed");
+		{
 			this.sample_area.set_size_request(l_start + this.sample_width + clip_width + l_start, -1);		// l_start is added for the empty padding at the start and end of the sample, so that it's in the middle of the screen. clip_width is added so that you can start with the end of the sample.
 			this.paned_l.set_position(l_start);
 			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
@@ -145,12 +145,13 @@ namespace Beatbox
 
 				int start_idx = (int)((start_x - x) / (float) w * this.loop.sample.visu_l.length);
 				int end_idx   = (int)((end_x   - x) / (float) w * this.loop.sample.visu_l.length);
-				message("draw %d (%f) - %d out of %d at x=%d", start_idx, (start_x - x) / (float) w, end_idx, this.loop.sample.visu_l.length, start_x);
+
 				set_context_rgb(context, TilePalette.WHITE);
 				Sample.draw_amplitude(
 					this.loop.sample.visu_l[start_idx:end_idx],
 					this.loop.sample.visu_r[start_idx:end_idx],
-					context, start_x, y, end_x - start_x, this.get_allocated_height()
+					context, start_x, y, end_x - start_x, this.get_allocated_height(),
+					start_idx
 				);
 			}
 
