@@ -89,8 +89,9 @@ namespace Beatbox
 					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 4 : 30);
 					int pane_width = (this.get_allocated_width() - clip_width) / 2;
 					double start_frac  = (this.scrollwindow.hadjustment.value + l_start - pane_width) / (double) sample_width;
-					//                                                            ⮴ l_start is for the emptiness to the left of the waveform. Doesn't go below 0. pane_width is for the width of the Gtk.Paned, which can go below 0 if the utilised clip is wider than the SampleViewer widget.
+					//            --              --            --                ⮴ l_start is for the emptiness to the left of the waveform. Doesn't go below 0. pane_width is for the width of the Gtk.Paned, which can go below 0 if the utilised clip is wider than the SampleViewer widget.
 					this.loop.start_tm = (uint64)(this.loop.sample.duration * start_frac);
+					this.sample_area.queue_draw();
 				}
 			}
 
@@ -132,31 +133,25 @@ namespace Beatbox
 			return true;	// Stop other handlers
 		}
 
-		Gdk.Pixbuf? render_cache = null;
-
 		public bool render_sample (Cairo.Context context)
 		{
 			if (this.loop != null)
 			{
+				// ⮶ Coords of the visualisation if it were to be drawn whole.⮷
 				int x = l_start, y = 0, w = this.sample_width, h = this.sample_area.get_allocated_height();
 
-				if (render_cache != null)
-				{
-					message("Render cache present");
-					if (render_cache.width  == w &&
-						render_cache.height == h)
-					{
-						message("Used cached image");
-						Gdk.cairo_set_source_pixbuf(context, render_cache, x, y);
-						return true;
-					}
-				}
+				int start_x = int.max((int)this.scrollwindow.hadjustment.value, x);
+				int end_x   = int.min(start_x + this.get_allocated_width(), x + sample_width);
 
+				int start_idx = (int)((start_x - x) / (float) w * this.loop.sample.visu_l.length);
+				int end_idx   = (int)((end_x   - x) / (float) w * this.loop.sample.visu_l.length);
+				message("draw %d (%f) - %d out of %d at x=%d", start_idx, (start_x - x) / (float) w, end_idx, this.loop.sample.visu_l.length, start_x);
 				set_context_rgb(context, TilePalette.WHITE);
-				Sample.draw_amplitude(this.loop.sample.visu_l, this.loop.sample.visu_r, context, x, y, w, h);
-
-				/* Cache the waveform so we don't have to draw it each time */
-				this.render_cache = Gdk.pixbuf_get_from_surface(context.get_target(), x, y, w, h);
+				Sample.draw_amplitude(
+					this.loop.sample.visu_l[start_idx:end_idx],
+					this.loop.sample.visu_r[start_idx:end_idx],
+					context, start_x, y, end_x - start_x, this.get_allocated_height()
+				);
 			}
 
 			return true;
