@@ -90,8 +90,6 @@ namespace Beatbox
 					int pane_width = (this.get_allocated_width() - clip_width) / 2;
 					double start_frac  = (this.scrollwindow.hadjustment.value + l_start - pane_width) / (double) sample_width;
 					//                                                            ⮴ l_start is for the emptiness to the left of the waveform. Doesn't go below 0. pane_width is for the width of the Gtk.Paned, which can go below 0 if the utilised clip is wider than the SampleViewer widget.
-					message("%llu\t%llu\t%llu", l_start, pane_width, l_start - clip_width);
-					message("%f / %f", start_frac, 1f);
 					this.loop.start_tm = (uint64)(this.loop.sample.duration * start_frac);
 				}
 			}
@@ -134,12 +132,31 @@ namespace Beatbox
 			return true;	// Stop other handlers
 		}
 
+		Gdk.Pixbuf? render_cache = null;
+
 		public bool render_sample (Cairo.Context context)
 		{
 			if (this.loop != null)
-			{message("draw");
+			{
+				int x = l_start, y = 0, w = this.sample_width, h = this.sample_area.get_allocated_height();
+
+				if (render_cache != null)
+				{
+					message("Render cache present");
+					if (render_cache.width  == w &&
+						render_cache.height == h)
+					{
+						message("Used cached image");
+						Gdk.cairo_set_source_pixbuf(context, render_cache, x, y);
+						return true;
+					}
+				}
+
 				set_context_rgb(context, TilePalette.WHITE);
-				Sample.draw_amplitude(this.loop.sample.visu_l, this.loop.sample.visu_r, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
+				Sample.draw_amplitude(this.loop.sample.visu_l, this.loop.sample.visu_r, context, x, y, w, h);
+
+				/* Cache the waveform so we don't have to draw it each time */
+				this.render_cache = Gdk.pixbuf_get_from_surface(context.get_target(), x, y, w, h);
 			}
 
 			return true;

@@ -113,8 +113,6 @@ namespace Beatbox
 					x + i * x_step,
 					baseline_y - (amplitude * half_height)
 				);
-
-				// if (i == visu_l.length - 1)
 			}
 
 			/* Draw bottom half, right channel */
