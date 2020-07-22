@@ -9,7 +9,7 @@ namespace Beatbox
 //		internal SampleCache cache = new SampleCache();		// A cache of the subset of the sample that this tile plays, so that it doesn't have to be seeked and loaded from disk every time. The only thing that will change/create the data here will be the widget that changes which part of the sample this tile plays (in our case the SampleViewer)
 
 		public uint64 start_tm { get; set; default = 0; }
-		public _Gst.ClockTime duration { get; set; }
+		public _Gst.ClockTime duration { get; set; }		// Duration in the source sample. Will not necessarily be played at 1x speed.
 
 		internal double _sv_zoom = 0;	// Zoom value for SampleViewer. Each LoopTile stores its own zoom.
 
@@ -36,7 +36,7 @@ namespace Beatbox
 
 		construct
 		{
-			this.attached.connect_after(this.on_attached);	// connect_after because we need to leave the base to set this.host first. // I'd make this a closure, but the closure had an unnecessary reference to this that kept it from being destructed.
+			this.attached.connect_after(this.update_clip);	// connect_after because we need to leave the base to set this.host first.
 
 			this.sample.visu_updated.connect(() => {
 				if (this.host != null)
@@ -44,15 +44,17 @@ namespace Beatbox
 			});
 
 			this.notify["start-tm"].connect(this.update_clip);
-			this.notify["duration"].connect(this.update_clip);
+
+			app.notify["bpm"].connect(() => {
+				this.duration = 4 * app.beat_duration;
+				this.update_clip();
+			});
 
 			this.layer = new GES.Layer();
 			app.timeline.add_layer(this.layer);
 
 			this.clip = new GES.UriClip(this.sample.uri);
 			this.layer.add_clip(this.clip);
-
-			this.update_clip();		// commits the timeline too.
 		}
 
 		~LoopTile()
@@ -62,16 +64,11 @@ namespace Beatbox
 			message("Removed %s\n", sample.uri);
 		}
 
-		void on_attached()
-		{
-			this.clip.start = 4 * app.beat_duration * host.bar_no;
-			app.timeline.commit();
-		}
-
 		internal void update_clip()
 		{
 			this.clip.duration = this.duration;
 			this.clip.in_point = this.start_tm;
+			this.clip.start = (4 * app.beat_duration) * host.bar_no;
 
 			app.timeline.commit();
 		}
@@ -112,11 +109,16 @@ namespace Beatbox
 			double progress = app.timeline.get_clock() == null ? 0 : (get_running_time(app.timeline) / (double) this.clip.duration - this.clip.start / (double) this.clip.duration).clamp(0, 1);
 			this.draw_progress(context, x, y, (uint32) 0x1374c5ff, progress);
 
+			var start_idx =            this.sample.visu_l.length *  this.start_tm                  / this.sample.duration;
+			var end_idx   = uint64.min(this.sample.visu_l.length * (this.start_tm + this.duration) / this.sample.duration, this.sample.visu_l.length);
+
 			set_context_rgb(context, TilePalette.WHITE);
 			Sample.draw_amplitude(
-				this.sample.visu_l[(this.sample.visu_l.length * this.start_tm / this.sample.duration) : (this.sample.visu_l.length * (this.start_tm + this.duration) / this.sample.duration)],
-				this.sample.visu_r[(this.sample.visu_r.length * this.start_tm / this.sample.duration) : (this.sample.visu_r.length * (this.start_tm + this.duration) / this.sample.duration)],
-				context, x, y, TILE_WIDTH, TILE_HEIGHT
+				this.sample.visu_l[start_idx:end_idx],
+				this.sample.visu_r[start_idx:end_idx],
+				context, x, y,
+				(this.start_tm + this.duration <= this.sample.duration) ? TILE_WIDTH : (int)(TILE_WIDTH * (this.sample.duration - this.start_tm) / (double) this.duration),
+				TILE_HEIGHT
 			);
 		}
 

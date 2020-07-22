@@ -15,13 +15,19 @@ namespace Beatbox
 
 		int l_start {
 			get {
-				return int.max(0, (int) ((this.get_allocated_width() - ((this.loop == null) ? 0 : this.loop.duration / Gst.SECOND * sec_pixels)) / 2.0));
+				return int.max(0, (int) ((this.get_allocated_width() - clip_width) / 2.0));
 			}
 		}
 
 		int sample_width {	// Current width of the visualized sample in pixels (without padding)
 			get {
 				return (this.loop == null) ? 0 : (int) (this.loop.sample.duration * this.sec_pixels / (double) Gst.SECOND);
+			}
+		}
+
+		int clip_width {
+			get {
+				return (this.loop == null) ? 0 : (int) ((this.loop.duration / (double) Gst.SECOND) * sec_pixels);
 			}
 		}
 
@@ -47,6 +53,8 @@ namespace Beatbox
 			if (this.loop != null)
 			{
 				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// If the whole sample's visu is still loading. // TODO: Disconnect after a the sample's been removed?
+				this.loop.notify["duration"].connect(this.on_zoom_changed);
+
 				this.on_zoom_changed();			// Change to the new tile's zoom, start and duration.
 			}
 
@@ -54,10 +62,11 @@ namespace Beatbox
 		}
 
 		void on_zoom_changed()
-		{
-			this.sample_area.set_size_request(l_start + this.sample_width + l_start, -1);		// l_start is added for the empty padding at the start and end of the sample
+		{message("Zoom changed");
+			this.sample_area.set_size_request(l_start + this.sample_width + clip_width + l_start, -1);		// l_start is added for the empty padding at the start and end of the sample, so that it's in the middle of the screen. clip_width is added so that you can start with the end of the sample.
 			this.paned_l.set_position(l_start);
 			this.paned_r.set_position((this.get_allocated_width() / 2) - l_start);
+			this.queue_resize();	// Gotta do this else it doesn;t resize straight away
 
 			if (this.loop != null)
 				this.scrollwindow.hadjustment.value = this.sample_width * (this.loop.start_tm / (double) this.loop.sample.duration);
@@ -78,7 +87,12 @@ namespace Beatbox
 				else
 				{
 					this.scrollwindow.hadjustment.value += -event.delta_y * ((event.state & Gdk.ModifierType.SHIFT_MASK) != 0 ? 4 : 30);
-					this.loop.start_tm = (uint64) ((this.scrollwindow.hadjustment.value / (double) sample_width) * this.loop.sample.duration);
+					int pane_width = (this.get_allocated_width() - clip_width) / 2;
+					double start_frac  = (this.scrollwindow.hadjustment.value + l_start - pane_width) / (double) sample_width;
+					//                                                            ⮴ l_start is for the emptiness to the left of the waveform. Doesn't go below 0. pane_width is for the width of the Gtk.Paned, which can go below 0 if the utilised clip is wider than the SampleViewer widget.
+					message("%llu\t%llu\t%llu", l_start, pane_width, l_start - clip_width);
+					message("%f / %f", start_frac, 1f);
+					this.loop.start_tm = (uint64)(this.loop.sample.duration * start_frac);
 				}
 			}
 
@@ -86,14 +100,13 @@ namespace Beatbox
 		}
 
 		private Gst.ClockTime start_max {
-			get { return this.loop.sample.duration - this.loop.duration; }
+			get { return this.loop.sample.duration; }
 		}
 
 		[GtkCallback]
 		internal bool on_keypress(Gdk.EventKey event)
 		{
 			if (this.loop == null) return false;
-
 
 			if (event.keyval == Gdk.Key.Page_Down)
 			{
@@ -124,7 +137,7 @@ namespace Beatbox
 		public bool render_sample (Cairo.Context context)
 		{
 			if (this.loop != null)
-			{
+			{message("draw");
 				set_context_rgb(context, TilePalette.WHITE);
 				Sample.draw_amplitude(this.loop.sample.visu_l, this.loop.sample.visu_r, context, l_start, 0, this.sample_width, this.sample_area.get_allocated_height());
 			}

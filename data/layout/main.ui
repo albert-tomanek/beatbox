@@ -78,7 +78,6 @@
                 <property name="can_focus">True</property>
                 <property name="adjustment">bpm_adjustment</property>
                 <property name="climb_rate">1</property>
-                <property name="value">120</property>
               </object>
               <packing>
                 <property name="expand">False</property>

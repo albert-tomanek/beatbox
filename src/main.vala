@@ -59,7 +59,9 @@ namespace Beatbox {
         [GtkChild] Gtk.Box sv_box;
 		internal SampleViewer sample_viewer;
 
-		public float bpm { get {return (float) this.bpm_entry.value; } }
+        [GtkChild] Gtk.Adjustment bpm_adjustment;
+
+		public double bpm { get; set; default = 120; }
 		public _Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
 
 		public MainWindow(Gtk.Application app)
@@ -72,6 +74,11 @@ namespace Beatbox {
 			this.init_audio();
 			this.init_ui();
 		}
+
+        construct   // Gets called from Object(...) above. Sets up object pipe work.
+        {
+            this.bind_property("bpm", this.bpm_adjustment, "value", BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE);
+        }
 
 		private void init_ui()
 		{
