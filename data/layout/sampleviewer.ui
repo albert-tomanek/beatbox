@@ -34,6 +34,25 @@
       </packing>
     </child>
     <child type="overlay">
+      <object class="GtkRevealer" id="marks_revealer">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="transition_type">crossfade</property>
+        <property name="transition_duration">2500</property>
+        <child>
+          <object class="GtkDrawingArea" id="marks">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="vexpand">True</property>
+            <signal name="draw" handler="draw_marks" swapped="no"/>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="pass_through">True</property>
+      </packing>
+    </child>
+    <child type="overlay">
       <object class="GtkEventBox">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
@@ -119,6 +138,9 @@
           </object>
         </child>
       </object>
+      <packing>
+        <property name="index">1</property>
+      </packing>
     </child>
     <child type="overlay">
       <object class="GtkBox">
@@ -160,7 +182,7 @@
         </child>
       </object>
       <packing>
-        <property name="index">1</property>
+        <property name="index">2</property>
       </packing>
     </child>
   </template>

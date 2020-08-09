@@ -15,7 +15,7 @@ namespace Beatbox
 		const uint32 WHITE      = (uint32) 0xffffffff;
 		const uint32 RED        = (uint32) 0xcb2d2eff; //cd3436ff
 
-		const uint32 MARK       = (uint32) 0xa3a6a540;
+		const uint32 MARK       = (uint32) 0xa3a6a530;
 	}
 
 	void set_context_rgb(Cairo.Context context, uint32 colour)

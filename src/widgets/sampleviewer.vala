@@ -37,6 +37,7 @@ namespace Beatbox
 		[GtkChild] Gtk.Viewport viewport;
 
 		[GtkChild] Gtk.DrawingArea marks;
+		[GtkChild] Gtk.Revealer marks_revealer;
 
 		[GtkChild] Gtk.Paned paned_l;
 		[GtkChild] Gtk.Paned paned_r;
@@ -112,6 +113,8 @@ namespace Beatbox
 					this.sample_area.queue_draw();
 				}
 			}
+
+			this.show_marks();
 
 			return false;
 		}
@@ -202,7 +205,13 @@ namespace Beatbox
 
 		internal void show_marks()
 		{
-			
+			var old_duration = marks_revealer.transition_duration;
+
+			marks_revealer.transition_duration = 0;
+			marks_revealer.set_reveal_child(true);
+
+			marks_revealer.transition_duration = old_duration;
+			marks_revealer.set_reveal_child(false);
 		}
 	}
 
