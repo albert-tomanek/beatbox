@@ -49,12 +49,17 @@ namespace Beatbox {
 	[GtkTemplate (ui = "/com/github/albert-tomanek/beatbox/main.ui")]
 	public class MainWindow : Gtk.ApplicationWindow
 	{
-		[GtkChild] Gtk.Grid tile_grid;
+        [GtkChild] Gtk.SpinButton bpm_entry;
+        [GtkChild] Gtk.ToggleButton play_button;
+
+        [GtkChild] Gtk.HeaderBar catalog_search_box;
+        [GtkChild] Gtk.SearchEntry catalog_search_entry;
+        [GtkChild] Gtk.Paned catalog_paned;
+
+		[GtkChild] Gtk.Grid  tile_grid;
 		[GtkChild] Gtk.Label msg_label;
-		[GtkChild] Gtk.SpinButton bpm_entry;
-		[GtkChild] Gtk.ToggleButton play_button;
         [GtkChild] Gtk.Image play_button_image;
-		// [GtkChild] Dazzle.DockRevealer sample_revealer;
+
         [GtkChild] Dazzle.DockBin dock_bin;
         [GtkChild] Gtk.Box sv_box;
 		internal SampleViewer sample_viewer;
@@ -78,6 +83,10 @@ namespace Beatbox {
         construct   // Gets called from Object(...) above. Sets up object pipe work.
         {
             this.bind_property("bpm", this.bpm_adjustment, "value", BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE);
+
+            catalog_paned.notify["position"].connect(() => {
+                this.catalog_search_box.set_size_request(catalog_paned.position, -1);
+            });
         }
 
 		private void init_ui()

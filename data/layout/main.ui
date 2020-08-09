@@ -15,88 +15,138 @@
     <property name="default_width">800</property>
     <property name="default_height">660</property>
     <child type="titlebar">
-      <object class="GtkHeaderBar" id="hbar">
+      <object class="GtkBox">
+        <property name="name">header_box</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="title" translatable="yes">BeatBox</property>
-        <property name="show_close_button">True</property>
+        <property name="hexpand">True</property>
         <child>
-          <object class="GtkBox">
+          <object class="GtkHeaderBar" id="catalog_search_box">
+            <property name="width_request">200</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <child>
-              <object class="GtkToggleButton" id="play_button">
+            <property name="hexpand">False</property>
+            <property name="spacing">0</property>
+            <child type="title">
+              <object class="GtkSearchEntry" id="catalog_search_entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="toggled" handler="on_play_toggled" swapped="no"/>
-                <child>
-                  <object class="GtkImage" id="play_button_image">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="icon_name">media-playback-start-symbolic</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="suggested-action"/>
-                </style>
+                <property name="hexpand">True</property>
+                <property name="primary_icon_name">edit-find-symbolic</property>
+                <property name="primary_icon_activatable">False</property>
+                <property name="primary_icon_sensitive">False</property>
+                <property name="placeholder_text" translatable="yes">Search…</property>
               </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
             </child>
-            <child>
-              <object class="GtkToggleButton">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="toggled" handler="on_metronome_toggled" swapped="no"/>
-                <child>
-                  <object class="GtkImage">
-                    <property name="width_request">14</property>
-                    <property name="height_request">14</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="resource">/com/github/albert-tomanek/beatbox/metronome.svg</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="suggested-action"/>
-                </style>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSpinButton" id="bpm_entry">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="adjustment">bpm_adjustment</property>
-                <property name="climb_rate">1</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">2</property>
-              </packing>
-            </child>
-            <style>
-              <class name="linked"/>
-            </style>
           </object>
           <packing>
-            <property name="pack_type">end</property>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSeparator">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHeaderBar" id="hbar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="hexpand">True</property>
+            <property name="title" translatable="yes">BeatBox</property>
+            <property name="show_close_button">True</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkToggleButton" id="play_button">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="toggled" handler="on_play_toggled" swapped="no"/>
+                    <child>
+                      <object class="GtkImage" id="play_button_image">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="icon_name">media-playback-start-symbolic</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="suggested-action"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToggleButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="toggled" handler="on_metronome_toggled" swapped="no"/>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="width_request">14</property>
+                        <property name="height_request">14</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="resource">/com/github/albert-tomanek/beatbox/metronome.svg</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="suggested-action"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="bpm_entry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="adjustment">bpm_adjustment</property>
+                    <property name="climb_rate">1</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <style>
+                  <class name="linked"/>
+                </style>
+              </object>
+              <packing>
+                <property name="pack_type">end</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
     </child>
     <child>
-      <object class="GtkPaned">
+      <object class="GtkPaned" id="catalog_paned">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <child>
@@ -205,21 +255,27 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkToggleButton">
-                        <property name="label" translatable="yes">b</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <signal name="toggled" handler="toggle_show_sample" swapped="no"/>
-                        <style>
-                          <class name="flat"/>
-                        </style>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
+                        <object class="GtkToggleButton">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <signal name="toggled" handler="toggle_show_sample" swapped="no"/>
+                            <child>
+                                <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="icon_name">panel-bottom-pane-symbolic</property>
+                                </object>
+                            </child>
+                            <style>
+                                <class name="flat"/>
+                            </style>
+                        </object>
+                        <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                        </packing>
                     </child>
                   </object>
                   <packing>

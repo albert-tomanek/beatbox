@@ -150,22 +150,6 @@
         <property name="border_width">4</property>
         <property name="spacing">8</property>
         <child>
-          <object class="GtkToggleButton">
-            <property name="label" translatable="yes">b</property>
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <style>
-              <class name="flat"/>
-            </style>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
           <object class="GtkBox" id="nbeats_box">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
