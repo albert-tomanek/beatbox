@@ -23,13 +23,17 @@ using Granite.Widgets;
 using Gtk;
 
 namespace Beatbox {
-    public class Application : Granite.Application
+    public class App : Gtk.Application
 	{
-        public Application () {
+        public GLib.Settings settings;
+
+        public App () {
             Object (
                 application_id: "com.github.albert-tomanek.beatbox",
                 flags: ApplicationFlags.FLAGS_NONE
             );
+
+            this.settings = new GLib.Settings(this.application_id);
         }
 
         protected override void activate () {
@@ -41,7 +45,7 @@ namespace Beatbox {
             Gst.init(ref args);
             GES.init();
 
-            var app = new Beatbox.Application ();
+            var app = new Beatbox.App ();
             return app.run (args);
         }
     }
@@ -66,10 +70,12 @@ namespace Beatbox {
 
         [GtkChild] Gtk.Adjustment bpm_adjustment;
 
+        private Beatbox.App app { get { return (this.application as Beatbox.App); } }
+
 		public double bpm { get; set; default = 120; }
 		public _Gst.ClockTime beat_duration { get { return (int64) ((60 * Gst.SECOND) / this.bpm); } }
 
-		public MainWindow(Gtk.Application app)
+		public MainWindow(Beatbox.App app)
 		{
 			Object(application: app);
 			this.load_style();
@@ -78,6 +84,8 @@ namespace Beatbox {
 
 			this.init_audio();
 			this.init_ui();
+
+            message("Load loops from %s", app.settings.get_string("loops-dir"));
 		}
 
         construct   // Gets called from Object(...) above. Sets up object pipe work.

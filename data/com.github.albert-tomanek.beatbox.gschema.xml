@@ -1,0 +1,18 @@
+<schemalist>
+  <schema id="com.github.albert-tomanek.beatbox" path="/com/github/albert-tomanek/beatbox/">
+    <key name="loops-dir" type="s">
+      <default>'~/Music/Loops/'</default>
+      <summary>Loops directory</summary>
+      <description>
+        Directory to store loop audio files.
+      </description>
+    </key>
+	<key name="beats-dir" type="s">
+      <default>'~/Music/'</default>
+      <summary>Beats directory</summary>
+      <description>
+        Default directory to store saved beats.
+      </description>
+    </key>
+  </schema>
+</schemalist>

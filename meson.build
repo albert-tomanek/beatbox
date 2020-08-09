@@ -1,8 +1,6 @@
 # project name and programming language
 project('com.github.albert-tomanek.beatbox', 'vala', 'c', version: '0.1.0')
 
-message ('project name and programming language')
-
 # Adds project arguments
 message ('Adds project arguments')
 
@@ -105,6 +103,15 @@ resources = gnome.compile_resources(
     source_dir: 'data/',
 	export: true,
 )
+
+message ('Install settings')    # https://developer.gnome.org/GSettings/
+schemas_dir = get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas'
+settings_schemas = [ 'data/com.github.albert-tomanek.beatbox.gschema.xml' ]
+
+install_data(settings_schemas, install_dir: schemas_dir)
+
+gnome.compile_schemas(depend_files: files(settings_schemas))
+meson.add_install_script('glib-compile-schemas', schemas_dir)
 
 message ('Adds files to build')
 
