@@ -120,6 +120,49 @@
         </child>
       </object>
     </child>
+    <child type="overlay">
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="valign">end</property>
+        <property name="border_width">4</property>
+        <property name="spacing">8</property>
+        <child>
+          <object class="GtkToggleButton">
+            <property name="label" translatable="yes">b</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <style>
+              <class name="flat"/>
+            </style>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="nbeats_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="index">1</property>
+      </packing>
+    </child>
   </template>
   <object class="GtkAdjustment" id="hscroll_adjustment">
     <property name="upper">100</property>

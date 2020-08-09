@@ -98,6 +98,8 @@ namespace Beatbox
 		internal static void draw_amplitude(float[] visu_l, float[] visu_r, Cairo.Context context, int x, int y, int width, int height, int _visu_offset = 0)
 		{
 			assert(visu_l.length == visu_r.length);
+			if (visu_l.length == 0 ||
+				width <= 0) return;
 
 			var half_height = (height / 2);
 			var baseline_y  = y + half_height;

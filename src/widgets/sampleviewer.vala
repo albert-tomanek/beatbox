@@ -39,6 +39,9 @@ namespace Beatbox
 		[GtkChild] Gtk.Paned paned_l;
 		[GtkChild] Gtk.Paned paned_r;
 
+		[GtkChild] Gtk.Box nbeats_box;
+		BeatsSpinButton nbeats_button;
+
 		[GtkChild] Gtk.Adjustment hscroll_adjustment;
 
 		construct {
@@ -46,6 +49,13 @@ namespace Beatbox
 			this.size_allocate.connect(this.on_zoom_changed);
 
 			this.sample_area.draw.connect_after(this.render_sample);
+
+			this.nbeats_button = new BeatsSpinButton();
+			this.nbeats_box.add(this.nbeats_button);
+			this.nbeats_button.value_changed.connect(() => {
+				if (this.loop != null)
+					this.loop.n_beats = this.nbeats_button.get_n_beats();
+			});
 		}
 
 		void on_new_sample()
@@ -54,6 +64,7 @@ namespace Beatbox
 			{
 				this.loop.sample.visu_updated.connect(this.sample_area.queue_draw);	// If the whole sample's visu is still loading. // TODO: Disconnect after a the sample's been removed?
 				this.loop.notify["duration"].connect(this.on_zoom_changed);
+				this.nbeats_button.set_n_beats(this.loop.n_beats);
 
 				this.on_zoom_changed();			// Change to the new tile's zoom, start and duration.
 			}
@@ -69,7 +80,10 @@ namespace Beatbox
 			this.queue_resize();	// Gotta do this else it doesn;t resize straight away
 
 			if (this.loop != null)
+			{
 				this.scrollwindow.hadjustment.value = this.sample_width * (this.loop.start_tm / (double) this.loop.sample.duration);
+				this.sample_area.queue_draw();
+			}
 		}
 
 		[GtkCallback]
@@ -156,6 +170,51 @@ namespace Beatbox
 			}
 
 			return true;
+		}
+	}
+
+	class BeatsSpinButton : Gtk.SpinButton
+	{
+		static int[] lengths = {1, 2, 4, 8, 16};
+
+		public BeatsSpinButton()
+		{
+			Object(adjustment: new Gtk.Adjustment(2, 0, 4, 1, 1, 0));
+			this.set_size_request(160, -1);
+		}
+
+		public override bool output()
+		{
+			this.set_text(@"$(get_n_beats()) beat$(get_n_beats() != 1 ? "s" : "")");
+
+			return true;
+		}
+
+		public override int input(out double new_val)
+		{
+			new_val = this.get_value();
+			return (int) true;
+		}
+
+		public int get_n_beats()
+		{
+			return BeatsSpinButton.lengths[(int) this.get_value()];
+		}
+
+		public void set_n_beats(uint beats)
+		{
+			int i = 0;
+
+			do {
+				if (beats > BeatsSpinButton.lengths[i])
+					i++;
+				else
+					break;
+			}
+			while (i < BeatsSpinButton.lengths.length);
+
+			this.value = (double) i;
+
 		}
 	}
 }

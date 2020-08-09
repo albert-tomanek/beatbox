@@ -9,7 +9,11 @@ namespace Beatbox
 //		internal SampleCache cache = new SampleCache();		// A cache of the subset of the sample that this tile plays, so that it doesn't have to be seeked and loaded from disk every time. The only thing that will change/create the data here will be the widget that changes which part of the sample this tile plays (in our case the SampleViewer)
 
 		public uint64 start_tm { get; set; default = 0; }
-		public _Gst.ClockTime duration { get; set; }		// Duration in the source sample. Will not necessarily be played at 1x speed.
+		public _Gst.ClockTime duration { get; set; }		// Duration in the source sample. Will not necessarily be played at 1x speed. Modified whenever n_beats is changed.
+		public _Gst.ClockTime play_duration {
+			get { return n_beats * app.beat_duration; }
+		}
+		public uint n_beats { get; set; default = 4; }
 
 		internal double _sv_zoom = 0;	// Zoom value for SampleViewer. Each LoopTile stores its own zoom.
 
@@ -21,8 +25,6 @@ namespace Beatbox
 		public LoopTile(MainWindow app, string uri)
 		{
 			Object(app: app, sample: new Sample(uri));
-
-			this.duration = 4 * app.beat_duration;
 		}
 
 		public LoopTile.copy(LoopTile src)
@@ -30,12 +32,24 @@ namespace Beatbox
 			Object(app: src.app, sample: src.sample);
 
 			this.start_tm = src.start_tm;
-			this.duration = src.duration;
+			this.n_beats  = src.n_beats;
 			this._sv_zoom = src._sv_zoom;
 		}
 
 		construct
 		{
+			/* Bind properties */
+
+			this.bind_property("n-beats", this, "duration", BindingFlags.SYNC_CREATE,
+				(b, src, ref dst) => {
+					var n_beats = src.get_uint();
+					Gst.ClockTime duration = n_beats * app.beat_duration;
+					dst.set_uint64(duration);
+				}
+			);
+
+			/* Connect signals */
+
 			this.attached.connect_after(this.update_clip);	// connect_after because we need to leave the base to set this.host first.
 
 			this.sample.visu_updated.connect(() => {
@@ -45,10 +59,14 @@ namespace Beatbox
 
 			this.notify["start-tm"].connect(this.update_clip);
 
+			this.notify["n-beats"].connect(update_clip);
+
 			app.notify["bpm"].connect(() => {
-				this.duration = 4 * app.beat_duration;
+				this.duration = this.n_beats * app.beat_duration;
 				this.update_clip();
 			});
+
+			/* Create associated clip in GES timeline */
 
 			this.layer = new GES.Layer();
 			app.timeline.add_layer(this.layer);
@@ -64,11 +82,12 @@ namespace Beatbox
 			message("Removed %s\n", sample.uri);
 		}
 
+		/* Update our clip in the GES timeline */
 		internal void update_clip()
 		{
 			this.clip.duration = this.duration;
 			this.clip.in_point = this.start_tm;
-			this.clip.start = (4 * app.beat_duration) * host.bar_no;
+			this.clip.start = (4 * app.beat_duration) * host.bar_no;	// Columns in the tilegrid are 4 beats long
 
 			app.timeline.commit();
 		}
