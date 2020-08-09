@@ -36,6 +36,8 @@ namespace Beatbox
 		[GtkChild] Gtk.ScrolledWindow scrollwindow;
 		[GtkChild] Gtk.Viewport viewport;
 
+		[GtkChild] Gtk.DrawingArea marks;
+
 		[GtkChild] Gtk.Paned paned_l;
 		[GtkChild] Gtk.Paned paned_r;
 
@@ -84,6 +86,8 @@ namespace Beatbox
 				this.scrollwindow.hadjustment.value = this.sample_width * (this.loop.start_tm / (double) this.loop.sample.duration);
 				this.sample_area.queue_draw();
 			}
+
+			this.marks.queue_draw();
 		}
 
 		[GtkCallback]
@@ -147,7 +151,7 @@ namespace Beatbox
 			return true;	// Stop other handlers
 		}
 
-		public bool render_sample (Cairo.Context context)
+		internal bool render_sample (Cairo.Context context)
 		{
 			if (this.loop != null)
 			{
@@ -170,6 +174,35 @@ namespace Beatbox
 			}
 
 			return true;
+		}
+
+		[GtkCallback]
+		internal bool draw_marks (Cairo.Context context)
+		{
+			// if (clip_width < 200) return true;
+
+			int    beats  = this.nbeats_button.get_n_beats();
+			double width  = 0.5 * double.min(1, clip_width / 200.0);
+			var    x_step = clip_width / (double) beats;
+			var    height = marks.get_allocated_height();
+
+			set_context_rgb(context, TilePalette.MARK);
+
+			for (int i = 1; i < beats; i++)
+			{
+				context.move_to(l_start + i * x_step, 0);
+				context.rel_line_to(0, height);
+				context.rel_line_to((i % 4 == 0) ? (2 * width) : width, 0);
+				context.rel_line_to(0, -height);
+				context.fill();
+			}
+
+			return true;
+		}
+
+		internal void show_marks()
+		{
+			
 		}
 	}
 
