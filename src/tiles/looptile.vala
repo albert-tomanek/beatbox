@@ -25,6 +25,7 @@ namespace Beatbox
 		public LoopTile(MainWindow app, string uri)
 		{
 			Object(app: app, sample: new Sample(uri));
+			sample.load_repr.begin();
 		}
 
 		public LoopTile.copy(LoopTile src)

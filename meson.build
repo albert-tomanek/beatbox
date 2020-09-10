@@ -30,7 +30,7 @@ add_global_arguments('-DGETTEXT_PACKAGE=\"@0@\"'.format (meson.project_name()), 
 message ('Listing dependencies')
 
 dependencies = [
-    dependency('gio-unix-2.0', version: '>=2.20'),
+    dependency('gio-2.0'),
     dependency('granite'),
     dependency('libdazzle-1.0'),
 	dependency('gstreamer-1.0'),

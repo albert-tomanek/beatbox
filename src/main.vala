@@ -59,6 +59,10 @@ namespace Beatbox {
         [GtkChild] Gtk.HeaderBar catalog_search_box;
         [GtkChild] Gtk.SearchEntry catalog_search_entry;
         [GtkChild] Gtk.Paned catalog_paned;
+        [GtkChild] Gtk.TreeView catalog_view;
+        [GtkChild] Gtk.TreeStore catalog_treestore;
+        Gtk.TreePath utilized_samples_section;
+        Gtk.TreePath all_samples_section;
 
 		[GtkChild] Gtk.Grid  tile_grid;
 		[GtkChild] Gtk.Label msg_label;
@@ -85,7 +89,7 @@ namespace Beatbox {
 			this.init_audio();
 			this.init_ui();
 
-            message("Load loops from %s", app.settings.get_string("loops-dir"));
+            this.read_samples.begin(app.settings.get_string("loops-dir"));
 		}
 
         construct   // Gets called from Object(...) above. Sets up object pipe work.
@@ -117,6 +121,17 @@ namespace Beatbox {
 			}
 
 			this.tile_grid.show_all();
+
+            /* Add headings to sample catalog */
+            Gtk.TreeIter iter;
+
+            catalog_treestore.append(out iter, null);
+            catalog_treestore.set(iter, 1, "This Beat", 2, Pango.Weight.BOLD, 3, true, -1);
+            this.utilized_samples_section = catalog_treestore.get_path(iter);
+
+            catalog_treestore.append(out iter, null);
+            catalog_treestore.set(iter, 1, "All Samples", 2, Pango.Weight.BOLD, 3, true, -1);
+            this.all_samples_section = catalog_treestore.get_path(iter);
 		}
 
 		private void load_style()
@@ -125,6 +140,46 @@ namespace Beatbox {
 			css_provider.load_from_resource("/com/github/albert-tomanek/beatbox/style.css");
 			Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 		}
+
+        /* Background runners */
+
+        public async void read_samples(owned string path)
+        {
+            Gtk.TreeIter iter, section;
+            catalog_treestore.get_iter(out section, this.all_samples_section);
+
+            if (path.last_index_of("~") == 0) {
+                path = path.replace("~", Environment.get_home_dir());
+            }
+
+            File dir = File.new_for_path(path);     // TODO: Filename.canonicalize(path) <- can't do this on Ubuntu 18.04
+            var query = yield dir.enumerate_children_async(@"$(FileAttribute.STANDARD_DISPLAY_NAME), $(FileAttribute.STANDARD_TYPE)", 0);
+
+            var yield_id = Idle.add(() => { read_samples.callback(); return Source.CONTINUE; });    // See here: https://stackoverflow.com/questions/63782404/vala-yield-not-returning/63835105#63835105
+
+            for (FileInfo? file; (file = query.next_file()) != null;)
+            {
+                if (file.get_file_type() == FileType.REGULAR)
+                {
+                    var name = file.get_display_name();
+
+                    catalog_treestore.append(out iter, section);
+                    catalog_treestore.set(iter, 1, name, -1);
+                }
+
+                yield;
+            }
+
+            message("finished");
+            Source.remove(yield_id);
+
+            query.close();
+
+            catalog_view.expand_row(this.utilized_samples_section, false);
+            catalog_view.expand_row(this.all_samples_section, false);
+
+            return;
+        }
 
 		/* UI callbacks */
 		[GtkCallback]

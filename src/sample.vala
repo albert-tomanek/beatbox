@@ -7,7 +7,7 @@ namespace Beatbox
 
 		public string uri { get; construct; }
 
-		internal float[] visu_l;
+		internal float[] visu_l;	// You need to call .load_repr.begin() manually when you need these loaded.
 		internal float[] visu_r;
 		internal signal void visu_updated();
 
@@ -20,14 +20,13 @@ namespace Beatbox
 
 		construct {
 			this.duration = read_duration(this.uri);
-
-			this.visu_l = new float[this.duration * 48 / Gst.SECOND];	// 48 samples for amplitude visualisation / second
-			this.visu_r = new float[this.duration * 48 / Gst.SECOND];
-			this.load_repr.begin();
 		}
 
-		private async void load_repr(uint update_interval = 64)	// Cancellable? c	// update_interval: trigger visu_updated every n samples
+		public async void load_repr(uint update_interval = 64)	// Cancellable? c	// update_interval: trigger visu_updated every n samples
 		{
+			this.visu_l = new float[this.duration * 48 / Gst.SECOND];	// 48 samples for amplitude visualisation / second
+			this.visu_r = new float[this.duration * 48 / Gst.SECOND];
+
 			uint visu_idx = 0;
 
 			/* Create elements */
