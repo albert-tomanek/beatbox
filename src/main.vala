@@ -60,7 +60,8 @@ namespace Beatbox {
         [GtkChild] Gtk.SearchEntry catalog_search_entry;
         [GtkChild] Gtk.Paned catalog_paned;
         [GtkChild] Gtk.TreeView catalog_view;
-        [GtkChild] Gtk.TreeStore catalog_treestore;
+        [GtkChild] Gtk.TreeStore       catalog_treestore;
+        [GtkChild] Gtk.TreeModelFilter catalog_treestore_filter;    // This is an adapter that filters the above when searches happen.
         Gtk.TreePath utilized_samples_section;
         Gtk.TreePath all_samples_section;
 
@@ -73,6 +74,12 @@ namespace Beatbox {
 		internal SampleViewer sample_viewer;
 
         [GtkChild] Gtk.Adjustment bpm_adjustment;
+
+        private enum TMRow {    // Row indexes inside the treemodel
+            SAMPLE_PTR = 0,
+            NAME = 1,
+            FWEIGHT = 2,
+        }
 
         private Beatbox.App app { get { return (this.application as Beatbox.App); } }
 
@@ -109,7 +116,7 @@ namespace Beatbox {
 
 			/* Fill grid of tile spaces */
 			for (var col = 0; col < 4; col++) {
-				for (var row = 0; row < 4; row++) {
+				for (var row = 0; row < 3; row++) {
 					var host = new TileHost(this);
 					host.bar_no = col;
 					host.track_no = row;
@@ -126,12 +133,23 @@ namespace Beatbox {
             Gtk.TreeIter iter;
 
             catalog_treestore.append(out iter, null);
-            catalog_treestore.set(iter, 1, "This Beat", 2, Pango.Weight.BOLD, 3, true, -1);
+            catalog_treestore.set(iter, TMRow.NAME, "This Beat", TMRow.FWEIGHT, Pango.Weight.BOLD, -1);
             this.utilized_samples_section = catalog_treestore.get_path(iter);
 
             catalog_treestore.append(out iter, null);
-            catalog_treestore.set(iter, 1, "All Samples", 2, Pango.Weight.BOLD, 3, true, -1);
+            catalog_treestore.set(iter, TMRow.NAME, "All Samples", TMRow.FWEIGHT, Pango.Weight.BOLD, -1);
             this.all_samples_section = catalog_treestore.get_path(iter);
+
+            /* Set up catalog filter */
+            catalog_treestore_filter.set_visible_func((model, iter) => {
+                if (catalog_search_entry.text_length == 0 ||
+                    model.get_path(iter).get_depth() == 1)
+                    return true;
+
+                unowned string name;
+                model.get(iter, TMRow.NAME, out name, -1);
+                return name.contains(catalog_search_entry.text);
+            });
 		}
 
 		private void load_style()
@@ -164,19 +182,17 @@ namespace Beatbox {
                     var name = file.get_display_name();
 
                     catalog_treestore.append(out iter, section);
-                    catalog_treestore.set(iter, 1, name, -1);
+                    catalog_treestore.set(iter, TMRow.NAME, name, -1);
                 }
 
                 yield;
             }
 
-            message("finished");
             Source.remove(yield_id);
 
             query.close();
 
-            catalog_view.expand_row(this.utilized_samples_section, false);
-            catalog_view.expand_row(this.all_samples_section, false);
+            this.on_search_changed();
 
             return;
         }
@@ -202,6 +218,15 @@ namespace Beatbox {
                 this.play_button_image.set_from_icon_name("media-playback-start-symbolic", Gtk.IconSize.BUTTON);
 			}
 		}
+
+        [GtkCallback]
+        internal void on_search_changed()
+        {
+            catalog_treestore_filter.refilter();
+
+            catalog_view.expand_row(this.utilized_samples_section, false);
+            catalog_view.expand_row(this.all_samples_section, false);
+        }
 
 		[GtkCallback]
 		internal void toggle_show_sample()
